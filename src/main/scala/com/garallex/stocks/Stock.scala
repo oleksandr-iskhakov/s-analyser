@@ -1,5 +1,7 @@
 package com.garallex.stocks
 
+import Utils._
+
 case class Stock(ticker: String,
                  name: String,
                  debtToEquity: Option[BigDecimal],
@@ -19,19 +21,28 @@ case class Stock(ticker: String,
         .append(s"$ticker - $name\n")
         .append(s"Debt to equity, %                   " + debtToEquity.get * 100 + "\n")
         .append(s"ROE, %                              " + roe.get * 100 + "\n")
-        .append(s"Intrinsic value                     " + intrinsicValue.get.formatted("%.4f") + "\n")
         .append(s"Actual price                        " + actualPrice.get + "\n")
+        .append(s"Intrinsic value                     " + intrinsicValue.get.formatted("%.4f") + "\n")
         .append(s"Actual price to Intrinsic value, %  " + (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.0f") + "\n")
         .toString
     }
     else s"$ticker - $name\nNO DATA\n"
 
+//  def format(str: String) = String.format("%0$-10s", str)
+
+//  def formatLine(strings: String*) = strings.foldLeft("")((zero, next) => zero + String.format("%0$-10s", next))
+
   def toStringLine =
     if (List(debtToEquity, roe, intrinsicValue, actualPrice, actualValueToIntrinsicValuePercent())
       .forall(_.isDefined)) {
-      val p = (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.0f")
-      s"$ticker\t$name\t${debtToEquity.get * 100}\t${roe.get * 100}\t${intrinsicValue.get.formatted("%.4f")}\t${actualPrice.get}\t$p\n"
+      val p = (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.1f")
+      formatLine(ticker, name.substring(0, Math.min(name.length - 1, 24)),
+        (debtToEquity.get * 100).formatted("%.2f"),
+        (roe.get * 100).formatted("%.2f"),
+        actualPrice.get.formatted("%.2f"),
+        intrinsicValue.get.formatted("%.2f"),
+        p.toString)
     }
-    else s"$ticker\t$name\n"
+    else formatLine(ticker, name.substring(0, Math.min(name.length - 1, 24)))
 
 }

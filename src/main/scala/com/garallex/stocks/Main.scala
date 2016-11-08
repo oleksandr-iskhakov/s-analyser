@@ -321,7 +321,9 @@ object Main {
     // MCD -??
     //    List("AAPL", "V", "MA")
 
-    println(s"Ticker\tName\tD/E, %\tROE, %\tIntrinsic\tActual\tA/I, %\n")
+    import Utils._
+    println(formatLine("Ticker","Name","D/E, %","ROE, %","Intrinsic","Actual","A/I, %"))
+    println()
     val x = fetchStockTickers()
     x.foreach { case (ticker, name) => println(buildStock(ticker, name).toStringLine) }
     //    println(buildStock("AAPL", "Apple"))
