@@ -4,3 +4,6 @@ https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAPL?modules=defaultKe
 
 http://www.gurufocus.com/term/deb2equity/V/Debt-to-Equity/Visa-Inc
 http://www.gurufocus.com/BuffettMunger.php
+
+Описание разных методик:
+http://www.nasdaq.com/symbol/amzn/guru-analysis

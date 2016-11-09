@@ -322,35 +322,33 @@ object Main {
     //    List("AAPL", "V", "MA")
 
     import Utils._
-    println(formatLine("Ticker","Name","D/E, %","ROE, %","Intrinsic","Actual","A/I, %"))
+    println(formatLine("Ticker", "Name", "D/E, %", "ROE, %", "Intrinsic", "Actual", "A/I, %"))
     println()
-    val x = fetchStockTickers()
-    x.foreach { case (ticker, name) => println(buildStock(ticker, name).toStringLine) }
+    val tickers = fetchStockTickers().toList.sortBy(_._1) //List(("INTC", "Intel"))
+    val allStocks = tickers.map { case (ticker, name) =>
+      val stock = buildStock(ticker, name)
+      println(stock.toStringLine)
+      stock
+    }
+    println("\n")
+    println("Screen is positive:\n")
+    val filteredStocks =
+      allStocks.filter(stock => stock.isComplete &&
+        stock.debtToEquity.get < BigDecimal("0.5") &&
+        stock.roe.get > BigDecimal("0.15") &&
+        stock.actualValueToIntrinsicValuePercent().get <= BigDecimal(-20))
+
+    filteredStocks.foreach { stock => println(stock.toStringLine) }
+
+    println("Stocks incomplete:\n")
+    allStocks
+      .filterNot(_.isComplete)
+      .foreach { stock => println(stock.toStringLine) }
+
+
+    //    allStocks.foreach { case (ticker, name) => println(buildStock(ticker, name).toStringLine) }
     //    println(buildStock("AAPL", "Apple"))
 
-    //    println(buildStock("V"))
-    //    println(buildStock("AAPL"))
-    //    println(buildStock("DE"))
-    //    println(buildStock("MCD"))
-    //    println(buildStock("TSLA"))
-
-    //    val ticker = "V"
-    //    val cashFlowFuture = Future { fetchCashFlowFromOperations(ticker) }
-    //    val longTermGrowFuture = Future { fetchLongTermGrowthRate(ticker) }
-    //    val betaFuture = Future { fetchBeta(ticker) }
-    //    val sharesOutstandingFuture = Future { fetchSharesOutstanding(ticker) }
-    //
-    //    val intrinsicValueFuture = for {
-    //      cashFlow <- cashFlowFuture
-    //      longTermGrowth <- longTermGrowFuture
-    //      beta <- betaFuture
-    //      sharesOutstanding <- sharesOutstandingFuture
-    //    } yield calcIntrinsicValue(cashFlow, longTermGrowth, beta, sharesOutstanding)
-    //    println(Await.result(intrinsicValueFuture, 10 seconds))
-
-
-    //    screenTicker("2331.HK")
-    //    screenTicker("V")
 
     // TODO: Test intrinsic value calculation
     // result = 13.54123677723634959048464516707911

@@ -8,6 +8,9 @@ case class Stock(ticker: String,
                  roe: Option[BigDecimal],
                  intrinsicValue: Option[BigDecimal],
                  actualPrice: Option[BigDecimal]) {
+
+  def isComplete = debtToEquity.isDefined && roe.isDefined && intrinsicValue.isDefined && actualPrice.isDefined
+
   def actualValueToIntrinsicValuePercent() =
     (actualPrice, intrinsicValue) match {
       case (_, None) | (None, _) => None
@@ -33,10 +36,9 @@ case class Stock(ticker: String,
 //  def formatLine(strings: String*) = strings.foldLeft("")((zero, next) => zero + String.format("%0$-10s", next))
 
   def toStringLine =
-    if (List(debtToEquity, roe, intrinsicValue, actualPrice, actualValueToIntrinsicValuePercent())
-      .forall(_.isDefined)) {
+    if (isComplete) {
       val p = (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.1f")
-      formatLine(ticker, name.substring(0, Math.min(name.length - 1, 24)),
+      formatLine(ticker, name.substring(0, Math.min(name.length - 1, 23)),
         (debtToEquity.get * 100).formatted("%.2f"),
         (roe.get * 100).formatted("%.2f"),
         actualPrice.get.formatted("%.2f"),
@@ -44,5 +46,4 @@ case class Stock(ticker: String,
         p.toString)
     }
     else formatLine(ticker, name.substring(0, Math.min(name.length - 1, 24)))
-
 }
