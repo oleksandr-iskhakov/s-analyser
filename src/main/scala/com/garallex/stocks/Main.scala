@@ -1,13 +1,11 @@
 package com.garallex.stocks
 
 import java.net.URL
-import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -106,11 +104,33 @@ object Main {
     case Failure(e) => None
   }
 
-  def fetchCashFlowFromOperations(ticker: String) = {
+  def fetchCashFlowFromOperationsYahoo(ticker: String) = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"operatingCashflow\":{\"raw\":")
     BigDecimal(value)
+  }
+
+  def fetchCashFlowFromOperationsCNN(ticker: String) = {
+    val doc = fetchWebPageAsDocument(new URL(s"http://money.cnn.com/quote/financials/financials.html?dataSet=CFS&symb=$ticker"))
+    val elements = doc.body.getElementsContainingOwnText("Net Cash Flow - Operating Activities")
+    val td = elements.get(0)
+    val element = td.parent.children.get(4)
+    abbreviatedStringToBigDecimal(element.ownText)
+  }
+
+  def fetchCashFlowFromOperations(ticker: String) = {
+    val yahooResult = Future {
+      Some(fetchCashFlowFromOperationsYahoo(ticker))
+    }
+
+    val cnnResult = Future {
+      Some(fetchCashFlowFromOperationsCNN(ticker))
+    }
+
+    yahooResult fallbackTo cnnResult fallbackTo Future {
+      None
+    }
   }
 
   def isDigitOrDotOrMinus(c: Char) = c.isDigit || c == '.' || c == '-'
@@ -163,81 +183,12 @@ object Main {
     BigDecimal(value)
   }
 
-  //  def fetchBeta(ticker: String) = {
-  //    val doc = fetchWebPage(ticker, "financialHighlights", buildReutersUrl)
-  //    val elements = doc.body.getElementsContainingOwnText("Beta")
-  //    val element = elements.get(0).parent.children.get(1)
-  //    BigDecimal(element.ownText)
-  //  }
-
-  def calcDiscountRateByBeta(beta: BigDecimal): BigDecimal =
-    (if (beta < 0.8) BigDecimal("5")
-    else if (beta < 1) BigDecimal("5.8") // ???
-    else if (beta < 1.1) BigDecimal("6")
-    else if (beta < 1.2) BigDecimal("6.8")
-    else if (beta < 1.3) BigDecimal("7")
-    else if (beta < 1.4) BigDecimal("7.9")
-    else if (beta < 1.5) BigDecimal("8")
-    else if (beta < 1.6) BigDecimal("8.9")
-    else BigDecimal("9")) / BigDecimal("100")
-
-  def calcIntrinsicValue(cashFlow: BigDecimal,
-                         longTermGrowthRate: BigDecimal,
-                         beta: BigDecimal,
-                         sharesOutstanding: BigDecimal): BigDecimal = {
-    val p = new util.ArrayList[BigDecimal]
-    p.add(cashFlow * (1 + longTermGrowthRate))
-    for (i <- 1 until 10) p.add(p.get(i - 1) * (1 + longTermGrowthRate))
-    val discountRate = calcDiscountRateByBeta(beta)
-    for (i <- 0 until p.size) p.set(i, p.get(i) / math.pow((1 + discountRate).toDouble, i + 1))
-    p.asScala.sum / sharesOutstanding
-  }
-
-  def calcIntrinsicValue(ticker: String): BigDecimal = {
-    val cashFlowFuture = Future {
-      fetchCashFlowFromOperations(ticker)
-    }
-
-    val longTermGrowFuture = Future {
-      fetchLongTermGrowthRate(ticker)
-    }
-
-    val betaFuture = Future {
-      fetchBeta(ticker)
-    }
-
-    val sharesOutstandingFuture = Future {
-      fetchSharesOutstanding(ticker)
-    }
-
-    val intrinsicValueFuture = for {
-      cashFlow <- cashFlowFuture
-      longTermGrowth <- longTermGrowFuture
-      beta <- betaFuture
-      sharesOutstanding <- sharesOutstandingFuture
-    } yield calcIntrinsicValue(cashFlow, longTermGrowth, beta, sharesOutstanding)
-    Await.result(intrinsicValueFuture, 10 seconds)
-
-    //    val cashFlowFromOperations = fetchCashFlowFromOperations(ticker)
-    //    val longTermGrowthRate = fetchLongTermGrowthRate(ticker)
-    //    val sharesOutstanding = fetchSharesOutstanding(ticker)
-    //    val beta = fetchBeta(ticker)
-    //    calcIntrinsicValue(cashFlowFromOperations, longTermGrowthRate, beta, sharesOutstanding)
-  }
-
   def fetchROERate(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"returnOnEquity\":{\"raw\":")
     BigDecimal(value)
   }
-
-  //  def fetchROERate(ticker: String): BigDecimal = {
-  //    val doc = fetchWebPage(ticker, "ks", buildYahooFinanceUrl)
-  //    val elements = doc.body.getElementsContainingOwnText("Return on Equity (ttm):")
-  //    val element = elements.get(0).parent.children.get(1)
-  //    BigDecimal(element.ownText.split('%').head) / BigDecimal("100")
-  //  }
 
   def fetchTotalDebtToEquityRate(ticker: String): BigDecimal = {
     // it is in percent.
@@ -284,10 +235,27 @@ object Main {
   //  }
 
   def buildStock(ticker: String, name: String) = {
-    val intrinsicValueFuture = Future {
-      tryWrapper(ticker, calcIntrinsicValue)
+    val cashFlowFuture = fetchCashFlowFromOperations(ticker)
+
+    val longTermGrowthFuture = Future {
+      tryWrapper(ticker, fetchLongTermGrowthRate)
     }
-    val priceFuture = Future {
+
+    val betaFuture = Future {
+      tryWrapper(ticker, fetchBeta)
+    }
+
+    val sharesOutstandingFuture = Future {
+      tryWrapper(ticker, fetchSharesOutstanding)
+    }
+
+    //    val intrinsicValueFuture = Future {
+    //      tryWrapper(ticker, calcIntrinsicValue)
+    //    }
+
+    //    Await.result(intrinsicValueFuture, 10 seconds)
+
+    val actualPriceFuture = Future {
       tryWrapper(ticker, fetchPrevClose)
     }
     val totalDebtToEquityRateFuture = Future {
@@ -297,18 +265,38 @@ object Main {
       tryWrapper(ticker, fetchROERate)
     }
 
+
+
+    //    val intrinsicValueFuture = for {
+    //      cashFlow <- cashFlowFuture
+    //      longTermGrowth <- longTermGrowthFuture
+    //      beta <- betaFuture
+    //      sharesOutstanding <- sharesOutstandingFuture
+    //    } yield calcIntrinsicValue(cashFlow, longTermGrowth, beta, sharesOutstanding)
+    //    Await.result(intrinsicValueFuture, 10 seconds)
+
     val stockFuture = for {
+      cashFlow <- cashFlowFuture
+      longTermGrowth <- longTermGrowthFuture
+      beta <- betaFuture
+      sharesOutstanding <- sharesOutstandingFuture
       debtToEquity <- totalDebtToEquityRateFuture
       roe <- roeRateFuture
-      intrinsicValue <- intrinsicValueFuture
-      actualPrice <- priceFuture
-    } yield Stock(ticker, name, debtToEquity, roe, intrinsicValue, actualPrice)
+      actualPrice <- actualPriceFuture
+    } yield Stock(ticker, name,
+      cashFlow = cashFlow,
+      debtToEquity = debtToEquity,
+      roe = roe,
+      longTermGrowth = longTermGrowth,
+      beta = beta,
+      sharesOutstanding = sharesOutstanding,
+      actualPrice = actualPrice)
 
-    Await.result(stockFuture, 10 seconds)
+    Await.result(stockFuture, 1 minutes)
   }
 
   def main(args: Array[String]) = {
-    //    val x = fetchCashFlowFromOperations("AAPL")
+//    val x = fetchCashFlowFromOperationsCNN("AAPL")
     //    val x = fetchLongTermGrowthRate("AAPL")
     //    val x = fetchBeta("AAPL")
     //    val x = fetchSharesOutstanding("AAPL")
@@ -327,7 +315,7 @@ object Main {
     val tickers = fetchStockTickers().toList.sortBy(_._1) //List(("INTC", "Intel"))
     val allStocks = tickers.map { case (ticker, name) =>
       val stock = buildStock(ticker, name)
-      println(stock.toStringLine)
+      if (stock.isComplete) println(stock.toStringLine)
       stock
     }
     println("\n")
@@ -343,8 +331,7 @@ object Main {
     println("Stocks incomplete:\n")
     allStocks
       .filterNot(_.isComplete)
-      .foreach { stock => println(stock.toStringLine) }
-
+      .foreach { stock => println(s"${stock.missingFields} - ${stock.ticker}, ${stock.name}") }
 
     //    allStocks.foreach { case (ticker, name) => println(buildStock(ticker, name).toStringLine) }
     //    println(buildStock("AAPL", "Apple"))
