@@ -310,6 +310,7 @@ object Main {
     //    List("AAPL", "V", "MA")
 
     import Utils._
+
     println(formatLine("Ticker", "Name", "D/E, %", "ROE, %", "Intrinsic", "Actual", "A/I, %"))
     println()
     val tickers = fetchStockTickers().toList.sortBy(_._1) //List(("INTC", "Intel"))
