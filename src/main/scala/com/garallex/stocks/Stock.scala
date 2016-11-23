@@ -12,7 +12,11 @@ case class Stock(ticker: String,
                  debtToEquity: Option[BigDecimal],
                  roe: Option[BigDecimal],
                  actualPrice: Option[BigDecimal],
-                 peRatio: Option[BigDecimal]) {
+                 peRatio: Option[BigDecimal],
+                 eps: Option[BigDecimal],
+                 currentRatio: Option[BigDecimal],
+                 bookPerShare: Option[BigDecimal],
+                 priceToBook: Option[BigDecimal]) {
 
   val intrinsicValue = (cashFlow, longTermGrowth, beta, sharesOutstanding) match {
     case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValue(cf, ltg, b, so))
@@ -20,9 +24,9 @@ case class Stock(ticker: String,
   }
 
   private def calcIntrinsicValue(cashFlow: BigDecimal,
-                         longTermGrowthRate: BigDecimal,
-                         beta: BigDecimal,
-                         sharesOutstanding: BigDecimal): BigDecimal = {
+                                 longTermGrowthRate: BigDecimal,
+                                 beta: BigDecimal,
+                                 sharesOutstanding: BigDecimal): BigDecimal = {
 
     def calcDiscountRateByBeta(beta: BigDecimal): BigDecimal =
       (if (beta < 0.8) BigDecimal("5")
@@ -43,22 +47,21 @@ case class Stock(ticker: String,
     p.sum / sharesOutstanding
   }
 
-  def isComplete =
-    debtToEquity.isDefined &&
-      roe.isDefined &&
-      peRatio.isDefined &&
-      intrinsicValue.isDefined &&
-      actualPrice.isDefined &&
-      cashFlow.isDefined &&
-      longTermGrowth.isDefined &&
-      beta.isDefined &&
-      sharesOutstanding.isDefined
+//  def isComplete =
+//    debtToEquity.isDefined &&
+//      roe.isDefined &&
+//      peRatio.isDefined &&
+//      intrinsicValue.isDefined &&
+//      actualPrice.isDefined &&
+//      cashFlow.isDefined &&
+//      longTermGrowth.isDefined &&
+//      beta.isDefined &&
+//      sharesOutstanding.isDefined
 
-  def actualValueToIntrinsicValuePercent() =
-    (actualPrice, intrinsicValue) match {
-      case (_, None) | (None, _) => None
-      case (Some(actualPriceValue), Some(intrinsicValueValue)) => Some(100 * (actualPriceValue / intrinsicValueValue - 1))
-    }
+  def actualValueToIntrinsicValuePercent() = (actualPrice, intrinsicValue) match {
+    case (_, None) | (None, _) => None
+    case (Some(actualPriceValue), Some(intrinsicValueValue)) => Some(100 * (actualPriceValue / intrinsicValueValue - 1))
+  }
 
   private def decimalOptionToString(value: Option[BigDecimal],
                                     multiplier: BigDecimal = 1,
@@ -70,32 +73,22 @@ case class Stock(ticker: String,
 
   override def toString =
     new StringBuilder()
-      .append(s"$ticker - $name\n")
+      .append(s"$ticker - $name - $industry\n")
       .append(s"Debt to equity, %                   " + decimalOptionToString(debtToEquity, 100) + "\n")
       .append(s"ROE, %                              " + decimalOptionToString(roe, 100) + "\n")
       .append(s"P/E                                 " + decimalOptionToString(peRatio) + "\n")
       .append(s"Actual price                        " + decimalOptionToString(actualPrice) + "\n")
       .append(s"Intrinsic value                     " + decimalOptionToString(intrinsicValue, 1, "%.4f") + "\n")
       .append(s"Actual price to Intrinsic value, %  " + decimalOptionToString(actualValueToIntrinsicValuePercent(), 1, "%+.0f") + "\n")
+      .append(s"Cash flow                           " + decimalOptionToString(cashFlow) + "\n")
+      .append(s"Long term growth                    " + decimalOptionToString(longTermGrowth) + "\n")
+      .append(s"Beta                                " + decimalOptionToString(beta) + "\n")
+      .append(s"Shares outstanding                  " + decimalOptionToString(sharesOutstanding) + "\n")
+      .append(s"EPS                                 " + decimalOptionToString(eps) + "\n")
+      .append(s"Current Ratio                       " + decimalOptionToString(currentRatio) + "\n")
+      .append(s"Book per share                      " + decimalOptionToString(bookPerShare) + "\n")
+      .append(s"Price to book                       " + decimalOptionToString(priceToBook) + "\n")
       .toString
-
-  //    if (List(debtToEquity, roe, intrinsicValue, actualPrice, actualValueToIntrinsicValuePercent())
-  //      .forall(_.isDefined)) {
-  //      new StringBuilder()
-  //        .append(s"$ticker - $name\n")
-  //        .append(s"Debt to equity, %                   " + debtToEquity.get * 100 + "\n")
-  //        .append(s"ROE, %                              " + roe.get * 100 + "\n")
-  //        .append(s"P/E                                 " + peRatio.get * 100 + "\n")
-  //        .append(s"Actual price                        " + actualPrice.get + "\n")
-  //        .append(s"Intrinsic value                     " + intrinsicValue.get.formatted("%.4f") + "\n")
-  //        .append(s"Actual price to Intrinsic value, %  " + (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.0f") + "\n")
-  //        .toString
-  //    }
-  //    else s"$ticker - $name\nNO DATA\n"
-
-  //  def format(str: String) = String.format("%0$-10s", str)
-
-  //  def formatLine(strings: String*) = strings.foldLeft("")((zero, next) => zero + String.format("%0$-10s", next))
 
   def toStringLine =
     formatLine(ticker,

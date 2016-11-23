@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
+import yahoofinance.YahooFinance
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -18,23 +19,6 @@ object Main {
     println(result)
     result
   }
-
-
-  //  def buildYahooFinanceUrl(ticker: String, prefix: String = null) = {
-  //    val infoType = prefix match {
-  //      case "ks" => "Key Statistics"
-  //      case "ae" => "Analyst Estimates"
-  //      case "cf" => "Cash Flow&annual"
-  //      case _ => null
-  //    }
-  //
-  //    val result = if (infoType != null)
-  //      new URL(s"http://finance.yahoo.com/quote/$prefix?s=$ticker+${infoType.replace(' ', '+')}")
-  //    else
-  //      new URL(s"http://finance.yahoo.com/q?s=$ticker")
-  //    println(result)
-  //    result
-  //  }
 
   def buildReutersUrl(ticker: String, prefix: String) =
     new URL(s"http://www.reuters.com/finance/stocks/$prefix?symbol=$ticker")
@@ -74,53 +58,12 @@ object Main {
     }
     else null
 
-  //  def findElemContainsText(elements: Elements, searchString: String): Element = {
-  //    for (elem <- elements.asScala) {
-  //      if (elem.ownText() == searchString)
-  //        return elem
-  //    }
-  //    null
-  //  }
-
-  //  def fetchCashFlowFromOperations(ticker: String) = {
-  //    val doc = fetchWebPage(ticker, "key-statistics", buildYahooFinanceUrl)
-  //    val elems = doc.body.getElementsContainingText("Operating Cash Flow")
-  //    val td = gotoParentTagName(elems.get(0), "td")
-  //    val element = td.parent.child(1).child(0)
-  //    abbreviatedStringToBigDecimal(element.ownText)
-  //  }
-
-  //  def fetchCashFlowFromOperations(ticker: String) = {
-  //    val doc = fetchWebPage(new URL(s"http://money.cnn.com/quote/financials/financials.html?dataSet=CFS&symb=$ticker"))
-  //    val elements = doc.body.getElementsContainingOwnText("Net Cash Flow - Operating Activities")
-  //    val td = elements.get(0)
-  //    val element = td.parent.children.get(3)
-  //    abbreviatedStringToBigDecimal(element.ownText)
-  //  }
-
-  def tryWrapper(ticker: String, func: String => BigDecimal) = Try {
-    func(ticker)
-  } match {
-    case Success(value) => Some(value)
-    case Failure(e) => None
-  }
-
   def fetchPERatioCNN(ticker: String) = {
     val doc = fetchWebPageAsDocument(new URL(s"http://money.cnn.com/quote/quote.html?symb=$ticker"))
     val elements = doc.body.getElementsContainingOwnText("P/E ratio")
     val td = elements.get(0)
     val element = td.parent.children.get(1)
     abbreviatedStringToBigDecimal(element.ownText)
-  }
-
-  def fetchPERatio(ticker: String) = {
-    val cnnResult = Future {
-      Some(fetchPERatioCNN(ticker))
-    }
-
-    cnnResult fallbackTo Future {
-      None
-    }
   }
 
   def fetchCashFlowFromOperationsYahoo(ticker: String) = {
@@ -138,20 +81,6 @@ object Main {
     abbreviatedStringToBigDecimal(element.ownText)
   }
 
-  def fetchCashFlowFromOperations(ticker: String) = {
-    val yahooResult = Future {
-      Some(fetchCashFlowFromOperationsYahoo(ticker))
-    }
-
-    val cnnResult = Future {
-      Some(fetchCashFlowFromOperationsCNN(ticker))
-    }
-
-    yahooResult fallbackTo cnnResult fallbackTo Future {
-      None
-    }
-  }
-
   def isDigitOrDotOrMinus(c: Char) = c.isDigit || c == '.' || c == '-'
 
   def findByKey(json: String, key: String) = {
@@ -164,45 +93,28 @@ object Main {
     sb.toString()
   }
 
-  def fetchLongTermGrowthRate(ticker: String) = {
+  def fetchLongTermGrowthRateYahoo(ticker: String) = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "{\"maxAge\":1,\"period\":\"+5y\",\"endDate\":null,\"growth\":{\"raw\":")
     BigDecimal(value)
   }
 
-  //  def fetchLongTermGrowthRate(ticker: String) = {
-  ////    val doc = fetchWebPage(ticker, "ae", buildYahooFinanceUrl)
-  //    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
-  //    val doc = fetchWebPage(url)
-  //
-  //    val elements = doc.body.getElementsContainingOwnText("Next 5 Years (per annum)")
-  //    val element = elements.get(0).parent.children.get(1)
-  //    BigDecimal(element.ownText.split('%').head) / BigDecimal("100")
-  //  }
-
-  //  def fetchSharesOutstanding(ticker: String) = {
-  //    val doc = fetchWebPage(ticker, "ks", buildYahooFinanceUrl)
-  //    val elements = doc.body.getElementsContainingOwnText("Shares Outstanding:")
-  //    val element = elements.get(0).parent.children.get(1)
-  //    abbreviatedStringToBigDecimal(element.ownText)
-  //  }
-
-  def fetchSharesOutstanding(ticker: String) = {
+  def fetchSharesOutstandingYahoo(ticker: String) = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"sharesOutstanding\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchBeta(ticker: String) = {
+  def fetchBetaYahoo(ticker: String) = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"beta\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchROERate(ticker: String): BigDecimal = {
+  def fetchROERateYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"returnOnEquity\":{\"raw\":")
@@ -226,21 +138,36 @@ object Main {
     abbreviatedStringToBigDecimal(element.ownText)
   }
 
-  def fetchTotalDebtToEquityRate(ticker: String) = {
-    val yahooResult = Future {
-      Some(fetchTotalDebtToEquityRateYahoo(ticker))
-    }
-
-    val cnnResult = Future {
-      Some(fetchTotalDebtToEquityRateReuters(ticker))
-    }
-
-    yahooResult fallbackTo cnnResult fallbackTo Future {
-      None
-    }
+  def fetchEpsYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"trailingEps\":{\"raw\":")
+    BigDecimal(value)
   }
 
-  def fetchPrevClose(ticker: String) = {
+  def fetchCurrentRatioYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"currentRatio\":{\"raw\":")
+    BigDecimal(value)
+  }
+
+  def fetchPriceToBookYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"priceToBook\":{\"raw\":")
+    BigDecimal(value)
+  }
+
+  def fetchBookPerShareYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"bookValue\":{\"raw\":")
+    BigDecimal(value)
+  }
+
+
+  def fetchPrevCloseYahoo(ticker: String) = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"currentPrice\":{\"raw\":")
@@ -261,31 +188,44 @@ object Main {
       }
   }
 
+  def fetchValue1[T](ticker: String, fetcher1: String => T): Future[Option[T]] =
+    Future[Option[T]] {
+      Some[T](fetcher1(ticker))
+    } recoverWith { case _ => Future[Option[T]] {
+      None
+    }
+    }
+
+  def fetchValue2[T](ticker: String, fetcher1: String => T, fetcher2: String => T): Future[Option[T]] =
+    Future[Option[T]] {
+      Some[T](fetcher1(ticker))
+    } recoverWith { case _ => Future[Option[T]] {
+      Some[T](fetcher2(ticker))
+    }
+    } recoverWith { case _ => Future[Option[T]] {
+      None
+    }
+    }
+
+  def fetchValue[T](ticker: String, fetchers: (String => T)*): Future[Option[T]] = fetchers.toList match {
+    case h :: Nil => fetchValue1(ticker, h)
+    case h1 :: h2 :: Nil => fetchValue2(ticker, h1, h2)
+    case _ => throw new NotImplementedError()
+  }
+
   def buildStock(ticker: String, name: String, industry: String) = {
-    val cashFlowFuture = fetchCashFlowFromOperations(ticker)
-
-    val longTermGrowthFuture = Future {
-      tryWrapper(ticker, fetchLongTermGrowthRate)
-    }
-
-    val betaFuture = Future {
-      tryWrapper(ticker, fetchBeta)
-    }
-
-    val sharesOutstandingFuture = Future {
-      tryWrapper(ticker, fetchSharesOutstanding)
-    }
-
-    val actualPriceFuture = Future {
-      tryWrapper(ticker, fetchPrevClose)
-    }
-
-    val totalDebtToEquityRateFuture = fetchTotalDebtToEquityRate(ticker)
-
-    val roeRateFuture = Future {
-      tryWrapper(ticker, fetchROERate)
-    }
-    val peRatioFuture = fetchPERatio(ticker)
+    val cashFlowFuture = fetchValue[BigDecimal](ticker, fetchCashFlowFromOperationsYahoo, fetchCashFlowFromOperationsCNN)
+    val longTermGrowthFuture = fetchValue(ticker, fetchLongTermGrowthRateYahoo)
+    val betaFuture = fetchValue(ticker, fetchBetaYahoo)
+    val sharesOutstandingFuture = fetchValue(ticker, fetchSharesOutstandingYahoo)
+    val actualPriceFuture = fetchValue(ticker, fetchPrevCloseYahoo)
+    val totalDebtToEquityRateFuture = fetchValue(ticker, fetchTotalDebtToEquityRateYahoo, fetchTotalDebtToEquityRateReuters)
+    val roeRateFuture = fetchValue(ticker, fetchROERateYahoo)
+    val peRatioFuture = fetchValue(ticker, fetchPERatioCNN)
+    val epsFuture = fetchValue(ticker, fetchEpsYahoo)
+    val currentRatioFuture = fetchValue(ticker, fetchCurrentRatioYahoo)
+    val bookPerShareFuture = fetchValue(ticker, fetchBookPerShareYahoo)
+    val priceToBookFuture = fetchValue(ticker, fetchPriceToBookYahoo)
 
     val stockFuture = for {
       cashFlow <- cashFlowFuture
@@ -296,6 +236,10 @@ object Main {
       roe <- roeRateFuture
       peRatio <- peRatioFuture
       actualPrice <- actualPriceFuture
+      eps <- epsFuture
+      currentRatio <- currentRatioFuture
+      bookPerShare <- bookPerShareFuture
+      priceToBook <- priceToBookFuture
     } yield Stock(
       ticker,
       name,
@@ -307,61 +251,55 @@ object Main {
       longTermGrowth = longTermGrowth,
       beta = beta,
       sharesOutstanding = sharesOutstanding,
-      actualPrice = actualPrice)
+      actualPrice = actualPrice,
+      eps = eps,
+      currentRatio = currentRatio,
+      bookPerShare = bookPerShare,
+      priceToBook = priceToBook)
 
     Await.result(stockFuture, 1 minutes)
   }
 
+
   def main(args: Array[String]) = {
-    //    val x = fetchTotalDebtToEquityRateReuters("PM")
-    //    val x = fetchCashFlowFromOperationsCNN("AAPL")
-    //    val x = fetchPERatioCNN("AAPL")
+        val stock = buildStock("V", "", "")
+        println(stock)
+    //
+    //    import Utils._
+    //
+    //    println(formatLine("Ticker", "Name", "Industry", "D/E, %", "ROE, %", "P/E Ratio", "Actual price", "Intrinsic value", "A/I, %"))
+    //    println()
+    //    val tickers = fetchStockTickers()
+    //      .toList
+    //      .sortBy(_._3)
+    //      .toParArray
+    //
+    //    val allStocks = tickers
+    //      .par
+    //      .map { case (ticker, name, industry) =>
+    //        val stock = buildStock(ticker, name, industry)
+    //        println(stock.toStringLine)
+    //        stock
+    //      }
+    //    println("\n")
+    //    println("Screen is positive:\n")
+    //    val filteredStocks =
+    //      allStocks.filter(stock => (stock.debtToEquity, stock.roe, stock.actualValueToIntrinsicValuePercent()) match {
+    //        case (Some(debtToEquityValue), Some(roeValue), Some(actualValueToIntrinsicValuePercentValue)) =>
+    //          debtToEquityValue < BigDecimal("0.5") &&
+    //            roeValue > BigDecimal("0.15") &&
+    //            actualValueToIntrinsicValuePercentValue <= BigDecimal(-20)
+    //        case _ => false
+    //      })
+    //
+    //    filteredStocks.foreach { stock => println(stock.toStringLine) }
 
-    //    val x = fetchLongTermGrowthRate("AAPL")
-    //    val x = fetchBeta("AAPL")
-    //    val x = fetchSharesOutstanding("AAPL")
-    //    val x = calcIntrinsicValue("V")
-    //    val x = fetchTotalDebtToEquityRate("AAPL")
-    //    val x = fetchROERate("AAPL")
-    //    val x = fetchPrevClose("AAPL")
-    //    println(buildStock("ADS"))
+    // ******************************************
 
-    // MCD -??
-    //    List("AAPL", "V", "MA")
-
-    import Utils._
-
-    println(formatLine("Ticker", "Name", "Industry", "D/E, %", "ROE, %", "P/E Ratio", "Actual price", "Intrinsic value", "A/I, %"))
-    println()
-    val tickers = fetchStockTickers()
-      .toList
-      .sortBy(_._3)
-      .toParArray
-
-    val allStocks = tickers
-      .par
-      .map { case (ticker, name, industry) =>
-        val stock = buildStock(ticker, name, industry)
-        println(stock.toStringLine)
-        stock
-      }
-    println("\n")
-    println("Screen is positive:\n")
-    val filteredStocks =
-      allStocks.filter(stock => (stock.debtToEquity, stock.roe, stock.actualValueToIntrinsicValuePercent()) match {
-        case (Some(debtToEquityValue), Some(roeValue), Some(actualValueToIntrinsicValuePercentValue)) =>
-          debtToEquityValue < BigDecimal("0.5") &&
-            roeValue > BigDecimal("0.15") &&
-            actualValueToIntrinsicValuePercentValue <= BigDecimal(-20)
-        case _ => false
-      })
-
-    filteredStocks.foreach { stock => println(stock.toStringLine) }
-
-    println("Stocks incomplete:\n")
-    allStocks
-      .filterNot(_.isComplete)
-      .foreach { stock => println(s"${stock.missingFields} - ${stock.ticker}, ${stock.name}") }
+    //    println("Stocks incomplete:\n")
+    //    allStocks
+    //      .filterNot(_.isComplete)
+    //      .foreach { stock => println(s"${stock.missingFields} - ${stock.ticker}, ${stock.name}") }
 
     //    allStocks.foreach { case (ticker, name) => println(buildStock(ticker, name).toStringLine) }
     //    println(buildStock("AAPL", "Apple"))

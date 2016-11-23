@@ -2,10 +2,10 @@ name := "analyser"
 
 version := "1.0"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.0"
 
 libraryDependencies ++= Seq(
-  "com.yahoofinance-api" % "YahooFinanceAPI" % "3.3.0",
+  "com.yahoofinance-api" % "YahooFinanceAPI" % "3.5.0",
   "org.jsoup" % "jsoup" % "1.9.2",
   "org.scala-lang.modules" % "scala-parser-combinators_2.11" % "1.0.4"
 )
@@ -15,3 +15,6 @@ resolvers ++= Seq(
   "Maven Repository" at "http://repo1.maven.org/maven2/",
   Resolver.mavenLocal
 )
+
+scalacOptions += "-feature"
+scalacOptions += "-language:postfixOps"
