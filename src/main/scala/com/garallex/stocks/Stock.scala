@@ -100,6 +100,7 @@ case class Stock(ticker: String,
   def toStringLine =
     formatLine(ticker,
       name.substring(0, Math.min(name.length - 1, 23)),
+      industry,
       decimalOptionToString(debtToEquity, 100, "%.2f"),
       decimalOptionToString(roe, 100, "%.2f"),
       decimalOptionToString(peRatio, 1, "%.2f"),

@@ -256,7 +256,7 @@ object Main {
       .map {
         line => {
           val split = line.split(',')
-          (split(0), split(1), split(2))
+          (split.head, split(1), split.last)
         }
       }
   }
@@ -331,14 +331,20 @@ object Main {
 
     import Utils._
 
-    println(formatLine("Ticker", "Name", "D/E, %", "ROE, %", "P/E Ratio", "Actual price", "Intrinsic value", "A/I, %"))
+    println(formatLine("Ticker", "Name", "Industry", "D/E, %", "ROE, %", "P/E Ratio", "Actual price", "Intrinsic value", "A/I, %"))
     println()
-    val tickers = fetchStockTickers().toList.sortBy(_._1) //List(("INTC", "Intel"))
-    val allStocks = tickers.map { case (ticker, name, industry) =>
-      val stock = buildStock(ticker, name, industry)
-      println(stock.toStringLine)
-      stock
-    }
+    val tickers = fetchStockTickers()
+      .toList
+      .sortBy(_._3)
+      .toParArray
+
+    val allStocks = tickers
+      .par
+      .map { case (ticker, name, industry) =>
+        val stock = buildStock(ticker, name, industry)
+        println(stock.toStringLine)
+        stock
+      }
     println("\n")
     println("Screen is positive:\n")
     val filteredStocks =
