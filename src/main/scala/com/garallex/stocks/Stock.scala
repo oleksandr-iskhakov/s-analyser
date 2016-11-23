@@ -47,16 +47,16 @@ case class Stock(ticker: String,
     p.sum / sharesOutstanding
   }
 
-//  def isComplete =
-//    debtToEquity.isDefined &&
-//      roe.isDefined &&
-//      peRatio.isDefined &&
-//      intrinsicValue.isDefined &&
-//      actualPrice.isDefined &&
-//      cashFlow.isDefined &&
-//      longTermGrowth.isDefined &&
-//      beta.isDefined &&
-//      sharesOutstanding.isDefined
+  //  def isComplete =
+  //    debtToEquity.isDefined &&
+  //      roe.isDefined &&
+  //      peRatio.isDefined &&
+  //      intrinsicValue.isDefined &&
+  //      actualPrice.isDefined &&
+  //      cashFlow.isDefined &&
+  //      longTermGrowth.isDefined &&
+  //      beta.isDefined &&
+  //      sharesOutstanding.isDefined
 
   def actualValueToIntrinsicValuePercent() = (actualPrice, intrinsicValue) match {
     case (_, None) | (None, _) => None
@@ -121,6 +121,10 @@ case class Stock(ticker: String,
       (if (debtToEquity.isEmpty) List("debtToEquity") else Nil) ++
       (if (roe.isEmpty) List("roe") else Nil) ++
       (if (peRatio.isEmpty) List("peRatio") else Nil) ++
-      (if (actualPrice.isEmpty) List("actualPrice") else Nil))
+      (if (actualPrice.isEmpty) List("actualPrice") else Nil) ++
+      (if (eps.isEmpty) List("eps") else Nil) ++
+      (if (currentRatio.isEmpty) List("currentRatio") else Nil) ++
+      (if (bookPerShare.isEmpty) List("bookPerShare") else Nil) ++
+      (if (priceToBook.isEmpty) List("priceToBook") else Nil))
       .mkString(", ")
 }
