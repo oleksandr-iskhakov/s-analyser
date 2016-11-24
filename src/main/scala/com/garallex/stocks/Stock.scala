@@ -18,12 +18,17 @@ case class Stock(ticker: String,
                  bookPerShare: Option[BigDecimal],
                  priceToBook: Option[BigDecimal]) {
 
-  val intrinsicValue = (cashFlow, longTermGrowth, beta, sharesOutstanding) match {
-    case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValue(cf, ltg, b, so))
+  lazy val intrinsicValueAdamKhoo = (cashFlow, longTermGrowth, beta, sharesOutstanding) match {
+    case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
     case _ => None
   }
 
-  private def calcIntrinsicValue(cashFlow: BigDecimal,
+  lazy val intrinsicValueGraham = (eps, bookPerShare) match {
+    case (Some(epsValue), Some(bookPerShareValue)) => Some(BigDecimal(Math.sqrt(22.5 * epsValue.toDouble * bookPerShareValue.toDouble)))
+    case _ => None
+  }
+
+  private def calcIntrinsicValueAdamKhoo(cashFlow: BigDecimal,
                                  longTermGrowthRate: BigDecimal,
                                  beta: BigDecimal,
                                  sharesOutstanding: BigDecimal): BigDecimal = {
@@ -58,7 +63,7 @@ case class Stock(ticker: String,
   //      beta.isDefined &&
   //      sharesOutstanding.isDefined
 
-  def actualValueToIntrinsicValuePercent() = (actualPrice, intrinsicValue) match {
+  def actualValueToIntrinsicValuePercent(intrinsicValue: Option[BigDecimal]) = (actualPrice, intrinsicValue) match {
     case (_, None) | (None, _) => None
     case (Some(actualPriceValue), Some(intrinsicValueValue)) => Some(100 * (actualPriceValue / intrinsicValueValue - 1))
   }
@@ -77,9 +82,6 @@ case class Stock(ticker: String,
       .append(s"Debt to equity, %                   " + decimalOptionToString(debtToEquity, 100) + "\n")
       .append(s"ROE, %                              " + decimalOptionToString(roe, 100) + "\n")
       .append(s"P/E                                 " + decimalOptionToString(peRatio) + "\n")
-      .append(s"Actual price                        " + decimalOptionToString(actualPrice) + "\n")
-      .append(s"Intrinsic value                     " + decimalOptionToString(intrinsicValue, 1, "%.4f") + "\n")
-      .append(s"Actual price to Intrinsic value, %  " + decimalOptionToString(actualValueToIntrinsicValuePercent(), 1, "%+.0f") + "\n")
       .append(s"Cash flow                           " + decimalOptionToString(cashFlow) + "\n")
       .append(s"Long term growth                    " + decimalOptionToString(longTermGrowth) + "\n")
       .append(s"Beta                                " + decimalOptionToString(beta) + "\n")
@@ -88,6 +90,10 @@ case class Stock(ticker: String,
       .append(s"Current Ratio                       " + decimalOptionToString(currentRatio) + "\n")
       .append(s"Book per share                      " + decimalOptionToString(bookPerShare) + "\n")
       .append(s"Price to book                       " + decimalOptionToString(priceToBook) + "\n")
+      .append(s"Actual price                        " + decimalOptionToString(actualPrice) + "\n")
+      .append(s"Intrinsic value Adam Khoo           " + decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.4f") + "\n")
+      .append(s"Intrinsic value Graham              " + decimalOptionToString(intrinsicValueGraham, 1, "%.4f") + "\n")
+      .append(s"Price/Adam Khoo intrinsic value, %  " + decimalOptionToString(actualValueToIntrinsicValuePercent(intrinsicValueAdamKhoo), 1, "%+.0f") + "\n")
       .toString
 
   def toStringLine =
@@ -98,8 +104,8 @@ case class Stock(ticker: String,
       decimalOptionToString(roe, 100, "%.2f"),
       decimalOptionToString(peRatio, 1, "%.2f"),
       decimalOptionToString(actualPrice, 1, "%.2f"),
-      decimalOptionToString(intrinsicValue, 1, "%.2f"),
-      decimalOptionToString(actualValueToIntrinsicValuePercent(), 1, "%.2f"))
+      decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.2f"),
+      decimalOptionToString(actualValueToIntrinsicValuePercent(intrinsicValueAdamKhoo), 1, "%.2f"))
 
   //    if (isComplete) {
   //    val p = (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.1f")
