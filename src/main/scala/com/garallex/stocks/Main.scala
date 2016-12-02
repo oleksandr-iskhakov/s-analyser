@@ -262,7 +262,7 @@ object Main {
 
 
   def main(args: Array[String]) = {
-        val stock = buildStock("AAPL", "", "")
+        val stock = buildStock("PG", "", "")
         println(stock)
     //
     //    import Utils._

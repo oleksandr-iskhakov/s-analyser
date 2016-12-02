@@ -23,8 +23,23 @@ case class Stock(ticker: String,
     case _ => None
   }
 
-  lazy val intrinsicValueGraham = (eps, bookPerShare) match {
-    case (Some(epsValue), Some(bookPerShareValue)) => Some(BigDecimal(Math.sqrt(22.5 * epsValue.toDouble * bookPerShareValue.toDouble)))
+  lazy val intrinsicValueGraham = (eps, longTermGrowth) match {
+    case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * (8.5 + 2 * longTermGrowthValue * 100))
+    case _ => None
+  }
+
+  lazy val intrinsicValueGrahamUpdated = (eps, longTermGrowth) match {
+    case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * 4.4 * (8.5 + 2 * longTermGrowthValue * 100) / 3.63)
+    case _ => None
+  }
+
+  lazy val grahamNumber = (eps, bookPerShare) match {
+    case (Some(epsValue), Some(bookPerShareValue)) => Some(BigDecimal(Math.sqrt(15 * 1.5 * epsValue.toDouble * bookPerShareValue.toDouble)))
+    case _ => None
+  }
+
+  lazy val grahamMixedMultiplier = (peRatio, priceToBook) match {
+    case (Some(peRatioValue), Some(priceToBookValue)) => Some(peRatioValue * priceToBookValue)
     case _ => None
   }
 
@@ -63,10 +78,10 @@ case class Stock(ticker: String,
   //      beta.isDefined &&
   //      sharesOutstanding.isDefined
 
-  def actualValueToIntrinsicValuePercent(intrinsicValue: Option[BigDecimal]) = (actualPrice, intrinsicValue) match {
-    case (_, None) | (None, _) => None
-    case (Some(actualPriceValue), Some(intrinsicValueValue)) => Some(100 * (actualPriceValue / intrinsicValueValue - 1))
-  }
+//  def actualValueToIntrinsicValuePercent(intrinsicValue: Option[BigDecimal]) = (actualPrice, intrinsicValue) match {
+//    case (_, None) | (None, _) => None
+//    case (Some(actualPriceValue), Some(intrinsicValueValue)) => Some(100 * (actualPriceValue / intrinsicValueValue - 1))
+//  }
 
   private def decimalOptionToString(value: Option[BigDecimal],
                                     multiplier: BigDecimal = 1,
@@ -93,7 +108,9 @@ case class Stock(ticker: String,
       .append(s"Actual price                        " + decimalOptionToString(actualPrice) + "\n")
       .append(s"Intrinsic value Adam Khoo           " + decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.4f") + "\n")
       .append(s"Intrinsic value Graham              " + decimalOptionToString(intrinsicValueGraham, 1, "%.4f") + "\n")
-      .append(s"Price/Adam Khoo intrinsic value, %  " + decimalOptionToString(actualValueToIntrinsicValuePercent(intrinsicValueAdamKhoo), 1, "%+.0f") + "\n")
+      .append(s"Intrinsic value Graham (Updated)    " + decimalOptionToString(intrinsicValueGrahamUpdated, 1, "%.4f") + "\n")
+      .append(s"Graham Mixed Multiplier (P/E * P/B) " + decimalOptionToString(grahamMixedMultiplier, 1, "%.4f") + ", must be <= 22.5\n")
+      .append(s"Graham Number                       " + decimalOptionToString(grahamNumber, 1, "%.4f") + "\n")
       .toString
 
   def toStringLine =
@@ -104,8 +121,7 @@ case class Stock(ticker: String,
       decimalOptionToString(roe, 100, "%.2f"),
       decimalOptionToString(peRatio, 1, "%.2f"),
       decimalOptionToString(actualPrice, 1, "%.2f"),
-      decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.2f"),
-      decimalOptionToString(actualValueToIntrinsicValuePercent(intrinsicValueAdamKhoo), 1, "%.2f"))
+      decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.2f"))
 
   //    if (isComplete) {
   //    val p = (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.1f")
