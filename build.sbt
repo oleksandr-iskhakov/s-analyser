@@ -7,7 +7,8 @@ scalaVersion := "2.12.0"
 libraryDependencies ++= Seq(
   "com.yahoofinance-api" % "YahooFinanceAPI" % "3.5.0",
   "org.jsoup" % "jsoup" % "1.9.2",
-  "org.scala-lang.modules" % "scala-parser-combinators_2.11" % "1.0.4"
+  "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
+  "org.json4s" % "json4s-native_2.12" % "3.5.0"
 )
 
 resolvers ++= Seq(

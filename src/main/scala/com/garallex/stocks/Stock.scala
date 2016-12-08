@@ -16,7 +16,10 @@ case class Stock(ticker: String,
                  eps: Option[BigDecimal],
                  currentRatio: Option[BigDecimal],
                  bookPerShare: Option[BigDecimal],
-                 priceToBook: Option[BigDecimal]) {
+                 priceToBook: Option[BigDecimal],
+                 enterpriseValue: Option[BigDecimal],
+                 totalCurrentAssets: Option[BigDecimal],
+                 longTermDebt: Option[BigDecimal]) {
 
   lazy val intrinsicValueAdamKhoo = (cashFlow, longTermGrowth, beta, sharesOutstanding) match {
     case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
@@ -94,6 +97,9 @@ case class Stock(ticker: String,
   override def toString =
     new StringBuilder()
       .append(s"$ticker - $name - $industry\n")
+      .append(s"Enterprise Value                    " + decimalOptionToString(enterpriseValue) + "\n")
+      .append(s"Total Current Assets                " + decimalOptionToString(totalCurrentAssets) + "\n")
+      .append(s"Long Term Debt                      " + decimalOptionToString(longTermDebt) + "\n")
       .append(s"Debt to equity, %                   " + decimalOptionToString(debtToEquity, 100) + "\n")
       .append(s"ROE, %                              " + decimalOptionToString(roe, 100) + "\n")
       .append(s"P/E                                 " + decimalOptionToString(peRatio) + "\n")

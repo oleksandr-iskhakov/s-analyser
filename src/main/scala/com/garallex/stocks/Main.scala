@@ -5,13 +5,14 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import yahoofinance.YahooFinance
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.io.Source
-import scala.util.{Failure, Success, Try}
+import org.json4s._
+import org.json4s.native.JsonMethods._
+
 
 object Main {
   def buildYahooFinanceUrl(ticker: String, prefix: String = null) = {
@@ -145,6 +146,13 @@ object Main {
     BigDecimal(value)
   }
 
+  def fetchEnterpriseValueYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"enterpriseValue\":{\"raw\":")
+    BigDecimal(value)
+  }
+
   def fetchCurrentRatioYahoo(ticker: String) = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
@@ -172,6 +180,24 @@ object Main {
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"currentPrice\":{\"raw\":")
     BigDecimal(value)
+  }
+
+  def fetchTotalCurrentAssetsYahoo(ticker: String) = {
+    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
+    val jsonString = fetchWebPageAsString(url)
+    val jSon = parse(jsonString)
+    val value = ((jSon \ "quoteSummary" \ "result")(0) \ "balanceSheetHistory" \ "balanceSheetStatements")(0) \ "totalCurrentAssets" \"raw"
+    implicit val formats = DefaultFormats
+    BigDecimal(value.extract[BigInt])
+  }
+
+  def fetchLongTermDebtYahoo(ticker: String) = {
+    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
+    val jsonString = fetchWebPageAsString(url)
+    val jSon = parse(jsonString)
+    val value = ((jSon \ "quoteSummary" \ "result")(0) \ "balanceSheetHistory" \ "balanceSheetStatements")(0) \ "longTermDebt" \"raw"
+    implicit val formats = DefaultFormats
+    BigDecimal(value.extract[BigInt])
   }
 
   def fetchStockTickers() = {
@@ -214,32 +240,22 @@ object Main {
   }
 
   def buildStock(ticker: String, name: String, industry: String) = {
-    val cashFlowFuture = fetchValue[BigDecimal](ticker, fetchCashFlowFromOperationsYahoo, fetchCashFlowFromOperationsCNN)
-    val longTermGrowthFuture = fetchValue(ticker, fetchLongTermGrowthRateYahoo)
-    val betaFuture = fetchValue(ticker, fetchBetaYahoo)
-    val sharesOutstandingFuture = fetchValue(ticker, fetchSharesOutstandingYahoo)
-    val actualPriceFuture = fetchValue(ticker, fetchPrevCloseYahoo)
-    val totalDebtToEquityRateFuture = fetchValue(ticker, fetchTotalDebtToEquityRateYahoo, fetchTotalDebtToEquityRateReuters)
-    val roeRateFuture = fetchValue(ticker, fetchROERateYahoo)
-    val peRatioFuture = fetchValue(ticker, fetchPERatioCNN)
-    val epsFuture = fetchValue(ticker, fetchEpsYahoo)
-    val currentRatioFuture = fetchValue(ticker, fetchCurrentRatioYahoo)
-    val bookPerShareFuture = fetchValue(ticker, fetchBookPerShareYahoo)
-    val priceToBookFuture = fetchValue(ticker, fetchPriceToBookYahoo)
-
     val stockFuture = for {
-      cashFlow <- cashFlowFuture
-      longTermGrowth <- longTermGrowthFuture
-      beta <- betaFuture
-      sharesOutstanding <- sharesOutstandingFuture
-      debtToEquity <- totalDebtToEquityRateFuture
-      roe <- roeRateFuture
-      peRatio <- peRatioFuture
-      actualPrice <- actualPriceFuture
-      eps <- epsFuture
-      currentRatio <- currentRatioFuture
-      bookPerShare <- bookPerShareFuture
-      priceToBook <- priceToBookFuture
+      cashFlow <- fetchValue(ticker, fetchCashFlowFromOperationsYahoo, fetchCashFlowFromOperationsCNN)
+      longTermGrowth <- fetchValue(ticker, fetchLongTermGrowthRateYahoo)
+      beta <- fetchValue(ticker, fetchBetaYahoo)
+      sharesOutstanding <- fetchValue(ticker, fetchSharesOutstandingYahoo)
+      debtToEquity <- fetchValue(ticker, fetchTotalDebtToEquityRateYahoo, fetchTotalDebtToEquityRateReuters)
+      roe <- fetchValue(ticker, fetchROERateYahoo)
+      peRatio <- fetchValue(ticker, fetchPERatioCNN)
+      actualPrice <- fetchValue(ticker, fetchPrevCloseYahoo)
+      eps <- fetchValue(ticker, fetchEpsYahoo)
+      currentRatio <- fetchValue(ticker, fetchCurrentRatioYahoo)
+      bookPerShare <- fetchValue(ticker, fetchBookPerShareYahoo)
+      priceToBook <- fetchValue(ticker, fetchPriceToBookYahoo)
+      enterpriseValue <- fetchValue(ticker, fetchEnterpriseValueYahoo)
+      totalCurrentAssets <- fetchValue(ticker, fetchTotalCurrentAssetsYahoo)
+      longTermDebt <- fetchValue(ticker, fetchLongTermDebtYahoo)
     } yield Stock(
       ticker,
       name,
@@ -255,15 +271,17 @@ object Main {
       eps = eps,
       currentRatio = currentRatio,
       bookPerShare = bookPerShare,
-      priceToBook = priceToBook)
+      priceToBook = priceToBook,
+      enterpriseValue = enterpriseValue,
+      totalCurrentAssets = totalCurrentAssets,
+      longTermDebt = longTermDebt)
 
     Await.result(stockFuture, 1 minutes)
   }
 
-
   def main(args: Array[String]) = {
-        val stock = buildStock("PG", "", "")
-        println(stock)
+    val stock = buildStock("AAPL", "", "")
+    println(stock)
     //
     //    import Utils._
     //
