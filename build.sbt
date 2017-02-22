@@ -8,7 +8,9 @@ libraryDependencies ++= Seq(
   "com.yahoofinance-api" % "YahooFinanceAPI" % "3.5.0",
   "org.jsoup" % "jsoup" % "1.9.2",
   "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
-  "org.json4s" % "json4s-native_2.12" % "3.5.0"
+  "org.json4s" % "json4s-native_2.12" % "3.5.0",
+  "edu.stanford.nlp" % "stanford-corenlp" % "3.7.0",
+  "edu.stanford.nlp" % "stanford-corenlp" % "3.7.0" classifier "models"
 )
 
 resolvers ++= Seq(

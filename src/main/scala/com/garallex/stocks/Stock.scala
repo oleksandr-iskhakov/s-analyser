@@ -2,10 +2,13 @@ package com.garallex.stocks
 
 import com.garallex.stocks.Utils._
 
+import scala.util.{Success, Try}
+
 case class Stock(ticker: String,
                  name: String,
                  industry: String,
                  cashFlow: Option[BigDecimal],
+                 freeCashFlow: Option[BigDecimal],
                  longTermGrowth: Option[BigDecimal],
                  beta: Option[BigDecimal],
                  sharesOutstanding: Option[BigDecimal],
@@ -21,37 +24,43 @@ case class Stock(ticker: String,
                  totalCurrentAssets: Option[BigDecimal],
                  longTermDebt: Option[BigDecimal]) {
 
-  lazy val intrinsicValueAdamKhoo = (cashFlow, longTermGrowth, beta, sharesOutstanding) match {
+  lazy val intrinsicValueAdamKhoo: Option[BigDecimal] = (freeCashFlow, longTermGrowth, beta, sharesOutstanding) match {
     case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
     case _ => None
   }
 
-  lazy val intrinsicValueGraham = (eps, longTermGrowth) match {
+  lazy val intrinsicValueGraham: Option[BigDecimal] = (eps, longTermGrowth) match {
     case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * (8.5 + 2 * longTermGrowthValue * 100))
     case _ => None
   }
 
-  lazy val intrinsicValueGrahamUpdated = (eps, longTermGrowth) match {
+  lazy val intrinsicValueGrahamUpdated: Option[BigDecimal] = (eps, longTermGrowth) match {
     case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * 4.4 * (8.5 + 2 * longTermGrowthValue * 100) / 3.63)
     case _ => None
   }
 
-  lazy val grahamNumber = (eps, bookPerShare) match {
-    case (Some(epsValue), Some(bookPerShareValue)) => Some(BigDecimal(Math.sqrt(15 * 1.5 * epsValue.toDouble * bookPerShareValue.toDouble)))
-    case _ => None
-  }
+  lazy val grahamNumber: Option[BigDecimal] =
+    (eps, bookPerShare) match {
+      case (Some(epsValue), Some(bookPerShareValue)) => Try {
+        BigDecimal(Math.sqrt(15 * 1.5 * epsValue.toDouble * bookPerShareValue.toDouble))
+      } match {
+        case Success(result) => Some(result)
+        case _ => None
+      }
+      case _ => None
+    }
 
-  lazy val grahamMixedMultiplier = (peRatio, priceToBook) match {
+  lazy val grahamMixedMultiplier: Option[BigDecimal] = (peRatio, priceToBook) match {
     case (Some(peRatioValue), Some(priceToBookValue)) => Some(peRatioValue * priceToBookValue)
     case _ => None
   }
 
   private def calcIntrinsicValueAdamKhoo(cashFlow: BigDecimal,
-                                 longTermGrowthRate: BigDecimal,
-                                 beta: BigDecimal,
-                                 sharesOutstanding: BigDecimal): BigDecimal = {
+                                         longTermGrowthRate: BigDecimal,
+                                         beta: BigDecimal,
+                                         sharesOutstanding: BigDecimal): BigDecimal = {
 
-    def calcDiscountRateByBeta(beta: BigDecimal): BigDecimal =
+    def getDiscountRateByBeta(beta: BigDecimal): BigDecimal =
       (if (beta < 0.8) BigDecimal("5")
       else if (beta < 1) BigDecimal("5.8") // ???
       else if (beta < 1.1) BigDecimal("6")
@@ -65,26 +74,10 @@ case class Stock(ticker: String,
     val p = new collection.mutable.ArrayBuffer[BigDecimal]
     p.append(cashFlow * (1 + longTermGrowthRate))
     for (i <- 1 until 10) p.append(p(i - 1) * (1 + longTermGrowthRate))
-    val discountRate = calcDiscountRateByBeta(beta)
+    val discountRate = getDiscountRateByBeta(beta)
     for (i <- p.indices) p.insert(i, p(i) / math.pow((1 + discountRate).toDouble, i + 1))
     p.sum / sharesOutstanding
   }
-
-  //  def isComplete =
-  //    debtToEquity.isDefined &&
-  //      roe.isDefined &&
-  //      peRatio.isDefined &&
-  //      intrinsicValue.isDefined &&
-  //      actualPrice.isDefined &&
-  //      cashFlow.isDefined &&
-  //      longTermGrowth.isDefined &&
-  //      beta.isDefined &&
-  //      sharesOutstanding.isDefined
-
-//  def actualValueToIntrinsicValuePercent(intrinsicValue: Option[BigDecimal]) = (actualPrice, intrinsicValue) match {
-//    case (_, None) | (None, _) => None
-//    case (Some(actualPriceValue), Some(intrinsicValueValue)) => Some(100 * (actualPriceValue / intrinsicValueValue - 1))
-//  }
 
   private def decimalOptionToString(value: Option[BigDecimal],
                                     multiplier: BigDecimal = 1,
@@ -94,7 +87,7 @@ case class Stock(ticker: String,
     case _ => ""
   }
 
-  override def toString =
+  override def toString: String =
     new StringBuilder()
       .append(s"$ticker - $name - $industry\n")
       .append(s"Enterprise Value                    " + decimalOptionToString(enterpriseValue) + "\n")
@@ -104,6 +97,7 @@ case class Stock(ticker: String,
       .append(s"ROE, %                              " + decimalOptionToString(roe, 100) + "\n")
       .append(s"P/E                                 " + decimalOptionToString(peRatio) + "\n")
       .append(s"Cash flow                           " + decimalOptionToString(cashFlow) + "\n")
+      .append(s"Free Cash flow                      " + decimalOptionToString(freeCashFlow) + "\n")
       .append(s"Long term growth                    " + decimalOptionToString(longTermGrowth) + "\n")
       .append(s"Beta                                " + decimalOptionToString(beta) + "\n")
       .append(s"Shares outstanding                  " + decimalOptionToString(sharesOutstanding) + "\n")
@@ -129,20 +123,9 @@ case class Stock(ticker: String,
       decimalOptionToString(actualPrice, 1, "%.2f"),
       decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.2f"))
 
-  //    if (isComplete) {
-  //    val p = (if (actualValueToIntrinsicValuePercent().get >= 0) "+" else "") + actualValueToIntrinsicValuePercent().get.formatted("%.1f")
-  //    formatLine(ticker, name.substring(0, Math.min(name.length - 1, 23)),
-  //      (debtToEquity.get * 100).formatted("%.2f"),
-  //      (roe.get * 100).formatted("%.2f"),
-  //      peRatio.get.formatted("%.2f"),
-  //      actualPrice.get.formatted("%.2f"),
-  //      intrinsicValue.get.formatted("%.2f"),
-  //      p.toString)
-  //  }
-  //  else formatLine(ticker, name.substring(0, Math.min(name.length - 1, 23)))
-
   def missingFields =
     ((if (cashFlow.isEmpty) List("cashFlow") else Nil) ++
+      (if (freeCashFlow.isEmpty) List("freeCashFlow") else Nil) ++
       (if (longTermGrowth.isEmpty) List("longTermGrowth") else Nil) ++
       (if (beta.isEmpty) List("beta") else Nil) ++
       (if (sharesOutstanding.isEmpty) List("sharesOutstanding") else Nil) ++
