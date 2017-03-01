@@ -25,7 +25,9 @@ object Main {
 //
 //    sentences.asScala.foreach { sentence => println(sentence.sentiment()) }
 
-    val stock = new StockBuilder("BIIB").build()
+    val stock = new StockBuilder("AAPL").build()
+
+//    val stock1 = stock.copy(freeCashFlow = Some(BigDecimal("9517000000")))
     println(stock)
   }
 }

@@ -85,6 +85,14 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     abbreviatedStringToBigDecimal(element.ownText.replaceAll(",", "")) * multiplier
   }
 
+  def fetchFreeCashFlowMarketWatch(ticker: String): BigDecimal = {
+    val doc = fetchWebPageAsDocument(new URL(s"http://www.marketwatch.com/investing/stock/$ticker/financials/cash-flow"))
+    val elements = doc.body.getElementsContainingOwnText("Free Cash Flow")
+    val children = elements.get(0).parent().children()
+    val element = children.get(children.size() - 2)
+    abbreviatedStringToBigDecimal(element.ownText)
+  }
+
   def isDigitOrDotOrMinus(c: Char): Boolean = c.isDigit || c == '.' || c == '-'
 
   def findByKey(json: String, key: String): String = {
@@ -177,6 +185,20 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     BigDecimal(value)
   }
 
+  def fetchCashPerShareYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"totalCashPerShare\":{\"raw\":")
+    BigDecimal(value)
+  }
+
+  def fetchTotalDebtYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"totalDebt\":{\"raw\":")
+    BigDecimal(value)
+  }
+
 
   def fetchPrevCloseYahoo(ticker: String) = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
@@ -245,8 +267,8 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
 
   def build(): Stock = {
     val stockFuture = for {
-      cashFlow <- fetchValue(ticker, fetchCashFlowFromOperationsYahoo, fetchCashFlowFromOperationsCNN)
-      freeCashFlow <- fetchValue(ticker, fetchFreeCashFlowWSJ)
+      cashFlowFromOperations <- fetchValue(ticker, fetchCashFlowFromOperationsYahoo, fetchCashFlowFromOperationsCNN)
+      freeCashFlow <- fetchValue(ticker, fetchFreeCashFlowMarketWatch, fetchFreeCashFlowWSJ)
       longTermGrowth <- fetchValue(ticker, fetchLongTermGrowthRateYahoo)
       beta <- fetchValue(ticker, fetchBetaYahoo)
       sharesOutstanding <- fetchValue(ticker, fetchSharesOutstandingYahoo)
@@ -261,11 +283,13 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       enterpriseValue <- fetchValue(ticker, fetchEnterpriseValueYahoo)
       totalCurrentAssets <- fetchValue(ticker, fetchTotalCurrentAssetsYahoo)
       longTermDebt <- fetchValue(ticker, fetchLongTermDebtYahoo)
+      totalDebt <- fetchValue(ticker, fetchTotalDebtYahoo)
+      cashPerShare <- fetchValue(ticker, fetchCashPerShareYahoo)
     } yield Stock(
       ticker = ticker,
       name = name,
       industry = industry,
-      cashFlow = cashFlow,
+      cashFlowFromOperations = cashFlowFromOperations,
       freeCashFlow = freeCashFlow,
       debtToEquity = debtToEquity,
       roe = roe,
@@ -280,7 +304,9 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       priceToBook = priceToBook,
       enterpriseValue = enterpriseValue,
       totalCurrentAssets = totalCurrentAssets,
-      longTermDebt = longTermDebt)
+      longTermDebt = longTermDebt,
+      totalDebt = totalDebt,
+      cashPerShare = cashPerShare)
 
     Await.result(stockFuture, 10 minutes)
   }

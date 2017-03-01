@@ -7,7 +7,7 @@ import scala.util.{Success, Try}
 case class Stock(ticker: String,
                  name: String,
                  industry: String,
-                 cashFlow: Option[BigDecimal],
+                 cashFlowFromOperations: Option[BigDecimal],
                  freeCashFlow: Option[BigDecimal],
                  longTermGrowth: Option[BigDecimal],
                  beta: Option[BigDecimal],
@@ -22,21 +22,31 @@ case class Stock(ticker: String,
                  priceToBook: Option[BigDecimal],
                  enterpriseValue: Option[BigDecimal],
                  totalCurrentAssets: Option[BigDecimal],
-                 longTermDebt: Option[BigDecimal]) {
+                 longTermDebt: Option[BigDecimal],
+                 totalDebt: Option[BigDecimal],
+                 cashPerShare: Option[BigDecimal]) {
 
-  lazy val intrinsicValueAdamKhoo: Option[BigDecimal] = (freeCashFlow, longTermGrowth, beta, sharesOutstanding) match {
-    case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
-    case _ => None
-  }
+  lazy val intrinsicValueAdamKhooOriginal: Option[BigDecimal] =
+    (cashFlowFromOperations, longTermGrowth, beta, sharesOutstanding, totalDebt, cashPerShare) match {
+      case (Some(cf), Some(ltg), Some(b), Some(so), Some(td), Some(cps)) =>
+        Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so) - td / so + cps)
+      case _ => None
+    }
+
+  lazy val intrinsicValueAdamKhoo: Option[BigDecimal] =
+    (freeCashFlow, longTermGrowth, beta, sharesOutstanding) match {
+      case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
+      case _ => None
+    }
 
   lazy val intrinsicValueGraham: Option[BigDecimal] = (eps, longTermGrowth) match {
     case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * (8.5 + 2 * longTermGrowthValue * 100))
     case _ => None
   }
 
-  lazy val intrinsicValueGrahamUpdated: Option[BigDecimal] = (eps, longTermGrowth) match {
-    case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * 4.4 * (8.5 + 2 * longTermGrowthValue * 100) / 3.63)
-    case _ => None
+  lazy val intrinsicValueGrahamUpdated: Option[BigDecimal] = intrinsicValueGraham match {
+    case Some(value) => Some(value * 4 / 3.7)
+    case None => None
   }
 
   lazy val grahamNumber: Option[BigDecimal] =
@@ -93,11 +103,13 @@ case class Stock(ticker: String,
       .append(s"Enterprise Value                    " + decimalOptionToString(enterpriseValue) + "\n")
       .append(s"Total Current Assets                " + decimalOptionToString(totalCurrentAssets) + "\n")
       .append(s"Long Term Debt                      " + decimalOptionToString(longTermDebt) + "\n")
+      .append(s"Total Debt                          " + decimalOptionToString(totalDebt) + "\n")
       .append(s"Debt to equity, %                   " + decimalOptionToString(debtToEquity, 100) + "\n")
       .append(s"ROE, %                              " + decimalOptionToString(roe, 100) + "\n")
       .append(s"P/E                                 " + decimalOptionToString(peRatio) + "\n")
-      .append(s"Cash flow                           " + decimalOptionToString(cashFlow) + "\n")
-      .append(s"Free Cash flow                      " + decimalOptionToString(freeCashFlow) + "\n")
+      .append(s"Cash flow Form Operations           " + decimalOptionToString(cashFlowFromOperations) + "\n")
+      .append(s"Free Cash Flow                      " + decimalOptionToString(freeCashFlow) + "\n")
+      .append(s"Cash per share                      " + decimalOptionToString(cashPerShare) + "\n")
       .append(s"Long term growth                    " + decimalOptionToString(longTermGrowth) + "\n")
       .append(s"Beta                                " + decimalOptionToString(beta) + "\n")
       .append(s"Shares outstanding                  " + decimalOptionToString(sharesOutstanding) + "\n")
@@ -106,7 +118,8 @@ case class Stock(ticker: String,
       .append(s"Book per share                      " + decimalOptionToString(bookPerShare) + "\n")
       .append(s"Price to book                       " + decimalOptionToString(priceToBook) + "\n")
       .append(s"Actual price                        " + decimalOptionToString(actualPrice) + "\n")
-      .append(s"Intrinsic value Adam Khoo           " + decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.4f") + "\n")
+      .append(s"Intrinsic A.Khoo Original           " + decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.4f") + "\n")
+      .append(s"Intrinsic A.Khoo on Free Cash Flow  " + decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.4f") + "\n")
       .append(s"Intrinsic value Graham              " + decimalOptionToString(intrinsicValueGraham, 1, "%.4f") + "\n")
       .append(s"Intrinsic value Graham (Updated)    " + decimalOptionToString(intrinsicValueGrahamUpdated, 1, "%.4f") + "\n")
       .append(s"Graham Mixed Multiplier (P/E * P/B) " + decimalOptionToString(grahamMixedMultiplier, 1, "%.4f") + ", must be <= 22.5\n")
@@ -124,7 +137,7 @@ case class Stock(ticker: String,
       decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.2f"))
 
   def missingFields =
-    ((if (cashFlow.isEmpty) List("cashFlow") else Nil) ++
+    ((if (cashFlowFromOperations.isEmpty) List("cashFlow") else Nil) ++
       (if (freeCashFlow.isEmpty) List("freeCashFlow") else Nil) ++
       (if (longTermGrowth.isEmpty) List("longTermGrowth") else Nil) ++
       (if (beta.isEmpty) List("beta") else Nil) ++
