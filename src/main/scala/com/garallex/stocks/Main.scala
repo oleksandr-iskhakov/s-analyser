@@ -25,7 +25,7 @@ object Main {
 
     while (true) {
       val ticker = scala.io.StdIn.readLine("Ticker:")
-      if (ticker == "") return
+      if (ticker == null || ticker == "") return
       println(new StockBuilder(ticker.toUpperCase).build())
     }
 
