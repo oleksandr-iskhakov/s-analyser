@@ -26,15 +26,22 @@ case class Stock(ticker: String,
                  totalDebt: Option[BigDecimal],
                  cashPerShare: Option[BigDecimal]) {
 
-  lazy val intrinsicValueAdamKhooOriginal: Option[BigDecimal] =
-    (cashFlowFromOperations, longTermGrowth, beta, sharesOutstanding, totalDebt, cashPerShare) match {
-      case (Some(cf), Some(ltg), Some(b), Some(so), Some(td), Some(cps)) =>
-        Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so) - td / so + cps)
+  //  lazy val intrinsicValueAdamKhooOriginal: Option[BigDecimal] =
+  //    (cashFlowFromOperations, longTermGrowth, beta, sharesOutstanding, totalDebt, cashPerShare) match {
+  //      case (Some(cf), Some(ltg), Some(b), Some(so), Some(td), Some(cps)) =>
+  //        Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so) - td / so + cps)
+  //      case _ => None
+  //    }
+
+  lazy val intrinsicValueAdamKhooOnFreeCashFlow: Option[BigDecimal] =
+    (freeCashFlow, longTermGrowth, beta, sharesOutstanding, totalDebt, cashPerShare) match {
+      case (Some(fcf), Some(ltg), Some(b), Some(so), Some(td), Some(cps)) =>
+        Some(calcIntrinsicValueAdamKhoo(fcf, ltg, b, so) - td / so + cps)
       case _ => None
     }
 
-  lazy val intrinsicValueAdamKhoo: Option[BigDecimal] =
-    (freeCashFlow, longTermGrowth, beta, sharesOutstanding) match {
+  lazy val intrinsicValueAdamKhooOriginal: Option[BigDecimal] =
+    (cashFlowFromOperations, longTermGrowth, beta, sharesOutstanding) match {
       case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
       case _ => None
     }
@@ -72,7 +79,7 @@ case class Stock(ticker: String,
 
     def getDiscountRateByBeta(beta: BigDecimal): BigDecimal =
       (if (beta < 0.8) BigDecimal("5")
-      else if (beta < 1) BigDecimal("5.8") // ???
+      else if (beta < 1) BigDecimal("5.7") // ???
       else if (beta < 1.1) BigDecimal("6")
       else if (beta < 1.2) BigDecimal("6.8")
       else if (beta < 1.3) BigDecimal("7")
@@ -100,41 +107,41 @@ case class Stock(ticker: String,
   override def toString: String =
     new StringBuilder()
       .append(s"$ticker - $name - $industry\n")
-      .append(s"Enterprise Value                    " + decimalOptionToString(enterpriseValue) + "\n")
-      .append(s"Total Current Assets                " + decimalOptionToString(totalCurrentAssets) + "\n")
-      .append(s"Long Term Debt                      " + decimalOptionToString(longTermDebt) + "\n")
-      .append(s"Total Debt                          " + decimalOptionToString(totalDebt) + "\n")
-      .append(s"Debt to equity, %                   " + decimalOptionToString(debtToEquity, 100) + "\n")
-      .append(s"ROE, %                              " + decimalOptionToString(roe, 100) + "\n")
-      .append(s"P/E                                 " + decimalOptionToString(peRatio) + "\n")
-      .append(s"Cash flow Form Operations           " + decimalOptionToString(cashFlowFromOperations) + "\n")
-      .append(s"Free Cash Flow                      " + decimalOptionToString(freeCashFlow) + "\n")
-      .append(s"Cash per share                      " + decimalOptionToString(cashPerShare) + "\n")
-      .append(s"Long term growth                    " + decimalOptionToString(longTermGrowth) + "\n")
-      .append(s"Beta                                " + decimalOptionToString(beta) + "\n")
-      .append(s"Shares outstanding                  " + decimalOptionToString(sharesOutstanding) + "\n")
-      .append(s"EPS                                 " + decimalOptionToString(eps) + "\n")
-      .append(s"Current Ratio                       " + decimalOptionToString(currentRatio) + "\n")
-      .append(s"Book per share                      " + decimalOptionToString(bookPerShare) + "\n")
-      .append(s"Price to book                       " + decimalOptionToString(priceToBook) + "\n")
-      .append(s"Actual price                        " + decimalOptionToString(actualPrice) + "\n")
-      .append(s"Intrinsic A.Khoo Original           " + decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.4f") + "\n")
-      .append(s"Intrinsic A.Khoo on Free Cash Flow  " + decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.4f") + "\n")
-      .append(s"Intrinsic value Graham              " + decimalOptionToString(intrinsicValueGraham, 1, "%.4f") + "\n")
-      .append(s"Intrinsic value Graham (Updated)    " + decimalOptionToString(intrinsicValueGrahamUpdated, 1, "%.4f") + "\n")
-      .append(s"Graham Mixed Multiplier (P/E * P/B) " + decimalOptionToString(grahamMixedMultiplier, 1, "%.4f") + ", must be <= 22.5\n")
-      .append(s"Graham Number                       " + decimalOptionToString(grahamNumber, 1, "%.4f") + "\n")
+      .append(s"Enterprise Value                    ${decimalOptionToString(enterpriseValue)}\n")
+      .append(s"Total Current Assets                ${decimalOptionToString(totalCurrentAssets)}\n")
+      .append(s"Long Term Debt                      ${decimalOptionToString(longTermDebt)}\n")
+      .append(s"Total Debt                          ${decimalOptionToString(totalDebt)}\n")
+      .append(s"Debt to equity, %                   ${decimalOptionToString(debtToEquity, 100)} (should be < 50)\n")
+      .append(s"ROE, %                              ${decimalOptionToString(roe, 100)} (should be > 15)\n")
+      .append(s"P/E                                 ${decimalOptionToString(peRatio)} (should be < 15)\n")
+      .append(s"Cash flow Form Operations           ${decimalOptionToString(cashFlowFromOperations)}\n")
+      .append(s"Free Cash Flow                      ${decimalOptionToString(freeCashFlow)}\n")
+      .append(s"Cash per share                      ${decimalOptionToString(cashPerShare)}\n")
+      .append(s"Long term growth                    ${decimalOptionToString(longTermGrowth)}\n")
+      .append(s"Beta                                ${decimalOptionToString(beta)}\n")
+      .append(s"Shares outstanding                  ${decimalOptionToString(sharesOutstanding)}\n")
+      .append(s"EPS                                 ${decimalOptionToString(eps)}\n")
+      .append(s"Current Ratio                       ${decimalOptionToString(currentRatio)} (should be >= 1.5)\n")
+      .append(s"Book per share                      ${decimalOptionToString(bookPerShare)}\n")
+      .append(s"Price to book                       ${decimalOptionToString(priceToBook)}\n")
+      .append(s"Actual price                        ${decimalOptionToString(actualPrice)}\n")
+      .append(s"Intrinsic A.Khoo Original           ${decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.4f")}\n")
+      .append(s"Intrinsic A.Khoo on Free Cash Flow  ${decimalOptionToString(intrinsicValueAdamKhooOnFreeCashFlow, 1, "%.4f")}\n")
+      .append(s"Intrinsic value Graham              ${decimalOptionToString(intrinsicValueGraham, 1, "%.4f")}\n")
+      .append(s"Intrinsic value Graham (Updated)    ${decimalOptionToString(intrinsicValueGrahamUpdated, 1, "%.4f")}\n")
+      .append(s"Graham Mixed Multiplier (P/E * P/B) ${decimalOptionToString(grahamMixedMultiplier, 1, "%.4f")} (must be <= 22.5)\n")
+      .append(s"Graham Number                       ${decimalOptionToString(grahamNumber, 1, "%.4f")}\n")
       .toString
 
-  def toStringLine =
-    formatLine(ticker,
-      name.substring(0, Math.min(name.length - 1, 23)),
-      industry,
-      decimalOptionToString(debtToEquity, 100, "%.2f"),
-      decimalOptionToString(roe, 100, "%.2f"),
-      decimalOptionToString(peRatio, 1, "%.2f"),
-      decimalOptionToString(actualPrice, 1, "%.2f"),
-      decimalOptionToString(intrinsicValueAdamKhoo, 1, "%.2f"))
+//  def toStringLine =
+//    formatLine(ticker,
+//      name.substring(0, Math.min(name.length - 1, 23)),
+//      industry,
+//      decimalOptionToString(debtToEquity, 100, "%.2f"),
+//      decimalOptionToString(roe, 100, "%.2f"),
+//      decimalOptionToString(peRatio, 1, "%.2f"),
+//      decimalOptionToString(actualPrice, 1, "%.2f"),
+//      decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.2f"))
 
   def missingFields =
     ((if (cashFlowFromOperations.isEmpty) List("cashFlow") else Nil) ++
