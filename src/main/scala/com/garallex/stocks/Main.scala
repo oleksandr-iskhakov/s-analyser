@@ -1,5 +1,7 @@
 package com.garallex.stocks
 
+import java.time.LocalDateTime
+
 import scala.collection.mutable
 
 
@@ -21,7 +23,10 @@ object Main {
     }
 
   def main(args: Array[String]): Unit = {
-//    println(x(2))
+    val a = Map(1 -> "A", 2 -> "B", 3 -> "C")
+    val b = Map(1 -> "D", 2 -> "B")
+    val x = a.updated(4, "D")
+    //println(LocalDateTime.of(2017, 3, 21, 0, 0).plusMinutes(65))
 
     while (true) {
       val ticker = scala.io.StdIn.readLine("Ticker:")

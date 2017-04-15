@@ -42,12 +42,12 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     case u => throw new Exception(s"Unrecognized multiplier $u")
   }
 
-//  def gotoParentTagName(elem: Element, searchTag: String): Element =
-//    if (elem != null) {
-//      if (elem.tagName == searchTag) elem
-//      else gotoParentTagName(elem.parent, searchTag)
-//    }
-//    else null
+  //  def gotoParentTagName(elem: Element, searchTag: String): Element =
+  //    if (elem != null) {
+  //      if (elem.tagName == searchTag) elem
+  //      else gotoParentTagName(elem.parent, searchTag)
+  //    }
+  //    else null
 
   def fetchPERatioCNN(ticker: String): BigDecimal = {
     val doc = fetchWebPageAsDocument(new URL(s"http://money.cnn.com/quote/quote.html?symb=$ticker"))
@@ -199,6 +199,13 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     BigDecimal(value)
   }
 
+  def fetchNetIncomeAfterTax(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"netIncomeToCommon\":{\"raw\":")
+    BigDecimal(value)
+  }
+
 
   def fetchPrevCloseYahoo(ticker: String) = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
@@ -212,6 +219,15 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
     val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistory" \ "balanceSheetStatements") (0) \ "totalCurrentAssets" \ "raw"
+    implicit val formats = DefaultFormats
+    BigDecimal(value.extract[BigInt])
+  }
+
+  def fetchTotalCurrentLiabilitiesYahoo(ticker: String) = {
+    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
+    val jsonString = fetchWebPageAsString(url)
+    val jSon = parse(jsonString)
+    val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistory" \ "balanceSheetStatements") (0) \ "totalCurrentLiabilities" \ "raw"
     implicit val formats = DefaultFormats
     BigDecimal(value.extract[BigInt])
   }
@@ -282,9 +298,11 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       priceToBook <- fetchValue(ticker, fetchPriceToBookYahoo)
       enterpriseValue <- fetchValue(ticker, fetchEnterpriseValueYahoo)
       totalCurrentAssets <- fetchValue(ticker, fetchTotalCurrentAssetsYahoo)
+      totalCurrentLiabilities <- fetchValue(ticker, fetchTotalCurrentLiabilitiesYahoo)
       longTermDebt <- fetchValue(ticker, fetchLongTermDebtYahoo)
       totalDebt <- fetchValue(ticker, fetchTotalDebtYahoo)
       cashPerShare <- fetchValue(ticker, fetchCashPerShareYahoo)
+      netIncomeAfterTax <- fetchValue(ticker, fetchNetIncomeAfterTax)
     } yield Stock(
       ticker = ticker,
       name = name,
@@ -304,9 +322,11 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       priceToBook = priceToBook,
       enterpriseValue = enterpriseValue,
       totalCurrentAssets = totalCurrentAssets,
+      totalCurrentLiabilities = totalCurrentLiabilities,
       longTermDebt = longTermDebt,
       totalDebt = totalDebt,
-      cashPerShare = cashPerShare)
+      cashPerShare = cashPerShare,
+      netIncomeAfterTax = netIncomeAfterTax)
 
     Await.result(stockFuture, 10 minutes)
   }

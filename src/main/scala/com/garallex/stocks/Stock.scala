@@ -1,7 +1,5 @@
 package com.garallex.stocks
 
-import com.garallex.stocks.Utils._
-
 import scala.util.{Success, Try}
 
 case class Stock(ticker: String,
@@ -13,6 +11,7 @@ case class Stock(ticker: String,
                  beta: Option[BigDecimal],
                  sharesOutstanding: Option[BigDecimal],
                  debtToEquity: Option[BigDecimal],
+                 netIncomeAfterTax: Option[BigDecimal],
                  roe: Option[BigDecimal],
                  actualPrice: Option[BigDecimal],
                  peRatio: Option[BigDecimal],
@@ -22,6 +21,7 @@ case class Stock(ticker: String,
                  priceToBook: Option[BigDecimal],
                  enterpriseValue: Option[BigDecimal],
                  totalCurrentAssets: Option[BigDecimal],
+                 totalCurrentLiabilities: Option[BigDecimal],
                  longTermDebt: Option[BigDecimal],
                  totalDebt: Option[BigDecimal],
                  cashPerShare: Option[BigDecimal]) {
@@ -72,6 +72,21 @@ case class Stock(ticker: String,
     case _ => None
   }
 
+  lazy val longTermDebtToNetIncomeAfterTax: Option[BigDecimal] = (longTermDebt, netIncomeAfterTax) match {
+    case (Some(ltd), Some(ni)) => Some(ltd / ni)
+    case _ => None
+  }
+
+  lazy val marketCap: Option[BigDecimal] = (sharesOutstanding, actualPrice) match {
+    case (Some(so), Some(p)) => Some(so * p)
+    case _ => None
+  }
+
+  lazy val netCurrentAssets: Option[BigDecimal] = (totalCurrentAssets, totalCurrentLiabilities) match {
+    case (Some(a), Some(l)) => Some(a - l)
+    case _ => None
+  }
+
   private def calcIntrinsicValueAdamKhoo(cashFlow: BigDecimal,
                                          longTermGrowthRate: BigDecimal,
                                          beta: BigDecimal,
@@ -107,41 +122,47 @@ case class Stock(ticker: String,
   override def toString: String =
     new StringBuilder()
       .append(s"$ticker - $name - $industry\n")
-      .append(s"Enterprise Value                    ${decimalOptionToString(enterpriseValue)}\n")
-      .append(s"Total Current Assets                ${decimalOptionToString(totalCurrentAssets)}\n")
-      .append(s"Long Term Debt                      ${decimalOptionToString(longTermDebt)}\n")
-      .append(s"Total Debt                          ${decimalOptionToString(totalDebt)}\n")
-      .append(s"Debt to equity, %                   ${decimalOptionToString(debtToEquity, 100)} (should be < 50)\n")
-      .append(s"ROE, %                              ${decimalOptionToString(roe, 100)} (should be > 15)\n")
-      .append(s"P/E                                 ${decimalOptionToString(peRatio)} (should be < 15)\n")
-      .append(s"Cash flow Form Operations           ${decimalOptionToString(cashFlowFromOperations)}\n")
-      .append(s"Free Cash Flow                      ${decimalOptionToString(freeCashFlow)}\n")
-      .append(s"Cash per share                      ${decimalOptionToString(cashPerShare)}\n")
-      .append(s"Long term growth                    ${decimalOptionToString(longTermGrowth)}\n")
-      .append(s"Beta                                ${decimalOptionToString(beta)}\n")
-      .append(s"Shares outstanding                  ${decimalOptionToString(sharesOutstanding)}\n")
-      .append(s"EPS                                 ${decimalOptionToString(eps)}\n")
-      .append(s"Current Ratio                       ${decimalOptionToString(currentRatio)} (should be >= 1.5)\n")
-      .append(s"Book per share                      ${decimalOptionToString(bookPerShare)}\n")
-      .append(s"Price to book                       ${decimalOptionToString(priceToBook)}\n")
-      .append(s"Actual price                        ${decimalOptionToString(actualPrice)}\n")
-      .append(s"Intrinsic A.Khoo Original           ${decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.4f")}\n")
-      .append(s"Intrinsic A.Khoo on Free Cash Flow  ${decimalOptionToString(intrinsicValueAdamKhooOnFreeCashFlow, 1, "%.4f")}\n")
-      .append(s"Intrinsic value Graham              ${decimalOptionToString(intrinsicValueGraham, 1, "%.4f")}\n")
-      .append(s"Intrinsic value Graham (Updated)    ${decimalOptionToString(intrinsicValueGrahamUpdated, 1, "%.4f")}\n")
-      .append(s"Graham Mixed Multiplier (P/E * P/B) ${decimalOptionToString(grahamMixedMultiplier, 1, "%.4f")} (must be <= 22.5)\n")
-      .append(s"Graham Number                       ${decimalOptionToString(grahamNumber, 1, "%.4f")}\n")
+      .append(s"Market Cap                            ${decimalOptionToString(marketCap, 1, "%.0f")} (should be >= 10 B. Graham)\n")
+      .append(s"Enterprise Value                      ${decimalOptionToString(enterpriseValue)} (should be >= 2 B. Graham)\n")
+      .append(s"Shares outstanding                    ${decimalOptionToString(sharesOutstanding)}\n")
+      .append(s"Total Current Assets                  ${decimalOptionToString(totalCurrentAssets)}\n")
+      .append(s"Total Current Liabilities             ${decimalOptionToString(totalCurrentLiabilities)}\n")
+      .append(s"Net Current Assets                    ${decimalOptionToString(netCurrentAssets)} (should be >= Long Term Debt. Graham)\n")
+      .append(s"Cash flow Form Operations             ${decimalOptionToString(cashFlowFromOperations)}\n")
+      .append(s"Free Cash Flow                        ${decimalOptionToString(freeCashFlow)}\n")
+      .append(s"Long Term Debt                        ${decimalOptionToString(longTermDebt)}\n")
+      .append(s"Total Debt                            ${decimalOptionToString(totalDebt)}\n")
+      .append(s"Net Income After Tax                  ${decimalOptionToString(netIncomeAfterTax)}\n")
+      .append(s"Long Term Debt / Net Income After Tax ${decimalOptionToString(longTermDebtToNetIncomeAfterTax, 1, "%.1f")} (should be < 3. Khoo) \n")
+      .append(s"Debt to equity, %                     ${decimalOptionToString(debtToEquity, 100, "%.1f")} (should be < 50. Graham & Khoo)\n")
+      .append(s"ROE, %                                ${decimalOptionToString(roe, 100, "%.1f")} (should be > 12-15. Khoo)\n")
+      .append(s"P/E                                   ${decimalOptionToString(peRatio)} (should be < 15. Graham)\n")
+      .append(s"Cash per share                        ${decimalOptionToString(cashPerShare)}\n")
+      .append(s"Long term growth, %                   ${decimalOptionToString(longTermGrowth, 100, "%.1f")}\n")
+      .append(s"Beta                                  ${decimalOptionToString(beta)}\n")
+      .append(s"EPS                                   ${decimalOptionToString(eps)} (should have grown for 33% during the latest 10 years. Even more: 50%-100% (4-7% per year). Passive. Graham)\n")
+      .append(s"Current Ratio                         ${decimalOptionToString(currentRatio)} (should be >= 2 for Passive, >= 1.5 for Active. Graham)\n")
+      .append(s"Book per share                        ${decimalOptionToString(bookPerShare)}\n")
+      .append(s"Price to book                         ${decimalOptionToString(priceToBook, 1, "%.1f")} (should be <= 1.5. Graham)\n")
+      .append(s"\n")
+      .append(s"Actual price                          ${decimalOptionToString(actualPrice)}\n")
+      .append(s"Intrinsic A.Khoo Original             ${decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.2f")} (should be at least 20% discount. Khoo)\n")
+      .append(s"Intrinsic A.Khoo on Free Cash Flow    ${decimalOptionToString(intrinsicValueAdamKhooOnFreeCashFlow, 1, "%.2f")} (should be at least 20% discount. Khoo)\n")
+      .append(s"Intrinsic value Graham                ${decimalOptionToString(intrinsicValueGraham, 1, "%.2f")} (should be at least 20% discount. Khoo)\n")
+      .append(s"Intrinsic value Graham (Updated)      ${decimalOptionToString(intrinsicValueGrahamUpdated, 1, "%.2f")} (should be at least 20% discount. Khoo)\n")
+      .append(s"Graham Mixed Multiplier (P/E * P/B)   ${decimalOptionToString(grahamMixedMultiplier, 1, "%.2f")} (should be <= 22.5. Graham)\n")
+      .append(s"Graham Number                         ${decimalOptionToString(grahamNumber, 1, "%.2f")} (the upper bound of the price range that a defensive investor should pay for the stock. Graham)\n")
       .toString
 
-//  def toStringLine =
-//    formatLine(ticker,
-//      name.substring(0, Math.min(name.length - 1, 23)),
-//      industry,
-//      decimalOptionToString(debtToEquity, 100, "%.2f"),
-//      decimalOptionToString(roe, 100, "%.2f"),
-//      decimalOptionToString(peRatio, 1, "%.2f"),
-//      decimalOptionToString(actualPrice, 1, "%.2f"),
-//      decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.2f"))
+  //  def toStringLine =
+  //    formatLine(ticker,
+  //      name.substring(0, Math.min(name.length - 1, 23)),
+  //      industry,
+  //      decimalOptionToString(debtToEquity, 100, "%.2f"),
+  //      decimalOptionToString(roe, 100, "%.2f"),
+  //      decimalOptionToString(peRatio, 1, "%.2f"),
+  //      decimalOptionToString(actualPrice, 1, "%.2f"),
+  //      decimalOptionToString(intrinsicValueAdamKhooOriginal, 1, "%.2f"))
 
   def missingFields =
     ((if (cashFlowFromOperations.isEmpty) List("cashFlow") else Nil) ++
