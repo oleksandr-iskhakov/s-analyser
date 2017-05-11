@@ -147,7 +147,7 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     val elements = doc.body.getElementsContainingOwnText("Total Debt to Equity (MRQ)")
     val td = elements.get(0)
     val element = td.parent.children.get(1)
-    abbreviatedStringToBigDecimal(element.ownText)
+    abbreviatedStringToBigDecimal(element.ownText) / 100
   }
 
   def fetchEpsYahoo(ticker: String) = {
@@ -161,6 +161,13 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"enterpriseValue\":{\"raw\":")
+    BigDecimal(value)
+  }
+
+  def fetchHeldByInstitutionsRatioYahoo(ticker: String) = {
+    val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
+    val jsonString = fetchWebPageAsString(url)
+    val value = findByKey(jsonString, "\"heldPercentInstitutions\":{\"raw\":")
     BigDecimal(value)
   }
 
@@ -303,6 +310,7 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       totalDebt <- fetchValue(ticker, fetchTotalDebtYahoo)
       cashPerShare <- fetchValue(ticker, fetchCashPerShareYahoo)
       netIncomeAfterTax <- fetchValue(ticker, fetchNetIncomeAfterTax)
+      heldByInstitutionsRatio <- fetchValue(ticker, fetchHeldByInstitutionsRatioYahoo)
     } yield Stock(
       ticker = ticker,
       name = name,
@@ -326,7 +334,8 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       longTermDebt = longTermDebt,
       totalDebt = totalDebt,
       cashPerShare = cashPerShare,
-      netIncomeAfterTax = netIncomeAfterTax)
+      netIncomeAfterTax = netIncomeAfterTax,
+      heldByInstitutionsRatio = heldByInstitutionsRatio)
 
     Await.result(stockFuture, 10 minutes)
   }
