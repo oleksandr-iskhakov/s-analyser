@@ -1,5 +1,7 @@
 package com.garallex.stocks
 
+import com.garallex.stocks.EconomicMoat.EconomicMoat
+
 import scala.util.{Success, Try}
 
 case class Stock(ticker: String,

@@ -3,6 +3,7 @@ package com.garallex.stocks
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 
+import com.garallex.stocks.EconomicMoat.EconomicMoat
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
 import org.jsoup.Jsoup
@@ -105,21 +106,21 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     sb.toString()
   }
 
-  def fetchLongTermGrowthRateYahoo(ticker: String) = {
+  def fetchLongTermGrowthRateYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "{\"maxAge\":1,\"period\":\"+5y\",\"endDate\":null,\"growth\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchSharesOutstandingYahoo(ticker: String) = {
+  def fetchSharesOutstandingYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"sharesOutstanding\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchBetaYahoo(ticker: String) = {
+  def fetchBetaYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"beta\":{\"raw\":")
@@ -150,63 +151,63 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     abbreviatedStringToBigDecimal(element.ownText) / 100
   }
 
-  def fetchEpsYahoo(ticker: String) = {
+  def fetchEpsYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"trailingEps\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchEnterpriseValueYahoo(ticker: String) = {
+  def fetchEnterpriseValueYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"enterpriseValue\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchHeldByInstitutionsRatioYahoo(ticker: String) = {
+  def fetchHeldByInstitutionsRatioYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"heldPercentInstitutions\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchCurrentRatioYahoo(ticker: String) = {
+  def fetchCurrentRatioYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"currentRatio\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchPriceToBookYahoo(ticker: String) = {
+  def fetchPriceToBookYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"priceToBook\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchBookPerShareYahoo(ticker: String) = {
+  def fetchBookPerShareYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"bookValue\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchCashPerShareYahoo(ticker: String) = {
+  def fetchCashPerShareYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"totalCashPerShare\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchTotalDebtYahoo(ticker: String) = {
+  def fetchTotalDebtYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"totalDebt\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchNetIncomeAfterTax(ticker: String) = {
+  def fetchNetIncomeAfterTax(ticker: String): BigDecimal = {
     val url = new URL(s"https://query1.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=defaultKeyStatistics%2CfinancialData%2CcalendarEvents")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"netIncomeToCommon\":{\"raw\":")
@@ -214,14 +215,14 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
   }
 
 
-  def fetchPrevCloseYahoo(ticker: String) = {
+  def fetchPrevCloseYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=upgradeDowngradeHistory%2CrecommendationTrend%2CfinancialData%2CearningsHistory%2CearningsTrend%2CindustryTrend")
     val jsonString = fetchWebPageAsString(url)
     val value = findByKey(jsonString, "\"currentPrice\":{\"raw\":")
     BigDecimal(value)
   }
 
-  def fetchTotalCurrentAssetsYahoo(ticker: String) = {
+  def fetchTotalCurrentAssetsYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
@@ -230,7 +231,7 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     BigDecimal(value.extract[BigInt])
   }
 
-  def fetchTotalCurrentLiabilitiesYahoo(ticker: String) = {
+  def fetchTotalCurrentLiabilitiesYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
@@ -239,7 +240,7 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     BigDecimal(value.extract[BigInt])
   }
 
-  def fetchLongTermDebtYahoo(ticker: String) = {
+  def fetchLongTermDebtYahoo(ticker: String): BigDecimal = {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
@@ -248,7 +249,7 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     BigDecimal(value.extract[BigInt])
   }
 
-  def fetchStockTickers() = {
+  def fetchStockTickers(): Iterator[(String, String, String)] = {
     val url = new URL(s"https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv")
     val tickers = fetchWebPageAsString(url)
     tickers
@@ -265,20 +266,23 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
   def fetchValue1[T](ticker: String, fetcher1: String => T): Future[Option[T]] =
     Future[Option[T]] {
       Some[T](fetcher1(ticker))
-    } recoverWith { case _ => Future[Option[T]] {
-      None
-    }
+    } recoverWith {
+      case _ => Future[Option[T]] {
+        None
+      }
     }
 
   def fetchValue2[T](ticker: String, fetcher1: String => T, fetcher2: String => T): Future[Option[T]] =
     Future[Option[T]] {
       Some[T](fetcher1(ticker))
-    } recoverWith { case _ => Future[Option[T]] {
-      Some[T](fetcher2(ticker))
-    }
-    } recoverWith { case _ => Future[Option[T]] {
-      None
-    }
+    } recoverWith {
+      case _ => Future[Option[T]] {
+        Some[T](fetcher2(ticker))
+      }
+    } recoverWith {
+      case _ => Future[Option[T]] {
+        None
+      }
     }
 
   def fetchValue[T](ticker: String, fetchers: (String => T)*): Future[Option[T]] =

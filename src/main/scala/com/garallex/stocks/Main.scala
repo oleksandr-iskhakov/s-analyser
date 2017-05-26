@@ -1,5 +1,14 @@
 package com.garallex.stocks
 
+import java.util
+
+import org.apache.http.NameValuePair
+import org.apache.http.client.entity.UrlEncodedFormEntity
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.message.BasicNameValuePair
+import org.apache.http.util.EntityUtils
+
 
 object Main {
   def grahamPreFiltered(stock: Stock): Option[Boolean] =
@@ -19,6 +28,22 @@ object Main {
     }
 
   def main(args: Array[String]): Unit = {
+//    val httpClient = HttpClients.createDefault
+//    val postRequest = new HttpPost("https://www.morningstar.com/members/login.html")
+//    val nvps = new util.ArrayList[NameValuePair]
+//    nvps.add(new BasicNameValuePair("uim-uEmail-input", "alexander.iskhakov@gmail.com"))
+//    nvps.add(new BasicNameValuePair("uim-uPassword-input", ""))
+//    nvps.add(new BasicNameValuePair("remember_me", "true"))
+//    postRequest.setEntity(new UrlEncodedFormEntity(nvps))
+//    val response = httpClient.execute(postRequest)
+//    try {
+//      System.out.println(response.getStatusLine)
+////      val entity2 = response.getEntity
+//      // do something useful with the response body
+//      // and ensure it is fully consumed
+////      EntityUtils.consume(entity2)
+//    } finally response.close()
+
     while (true) {
       val ticker = scala.io.StdIn.readLine("Ticker:")
       if (ticker == null || ticker == "") return
