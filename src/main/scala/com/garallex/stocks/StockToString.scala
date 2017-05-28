@@ -30,7 +30,7 @@ class StockToString(stock: Stock) {
       .append(s"ROE, %                                ${decimalOptionToString(stock.roe, 100, "%.1f")} (should be > 12-15. Khoo). ${Roe(stock)}\n")
       .append(s"P/E                                   ${decimalOptionToString(stock.peRatio)} (should be < 15. Graham). ${PriceToEarnings(stock)}\n")
       .append(s"Cash per share                        ${decimalOptionToString(stock.cashPerShare)}\n")
-      .append(s"Long term growth, %                   ${decimalOptionToString(stock.longTermGrowth, 100, "%.1f")}\n")
+      .append(s"Long term growth, %                   ${decimalOptionToString(stock.longTermGrowth, 100, "%.1f")} (should be >= 10%. Khoo). ${LongTermGrowthProspects(stock)}\n")
       .append(s"Beta                                  ${decimalOptionToString(stock.beta)}\n")
       .append(s"EPS                                   ${decimalOptionToString(stock.eps)} (should have grown for 33% during the latest 10 years. Even more: 50%-100% (4-7% per year). Passive. Graham)\n")
       .append(s"Current Ratio                         ${decimalOptionToString(stock.currentRatio)} (should be >= 2 for Passive, >= 1.5 for Active. Graham). Active: ${CurrentRatioActive(stock)}. Passive: ${CurrentRatioPassive(stock)}\n")
