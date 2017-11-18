@@ -1,10 +1,10 @@
 package com.garallex.stocks.criteria
 
-import com.garallex.stocks.Stock
+import com.garallex.stocks.domain.Stock
 
-case class LongTermDebtToNetIncomeAfterTax(stock: Stock) extends Criteria(stock) {
+case class LongTermDebtToNetIncomeAfterTax(stock: Stock) extends Criteria {
   override def result: Option[Boolean] = (stock.longTermDebt, stock.netIncomeAfterTax) match {
-    case (Some(ltd), Some(niat)) => Some(ltd / niat < 3)
+    case (Some(longTermDebt), Some(netIncomeAfterTax)) => Some(longTermDebt / netIncomeAfterTax < 3)
     case _ => None
   }
 }

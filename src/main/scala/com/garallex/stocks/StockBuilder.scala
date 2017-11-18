@@ -3,16 +3,16 @@ package com.garallex.stocks
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 
-import com.garallex.stocks.EconomicMoat.EconomicMoat
+import com.garallex.stocks.domain.Stock
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.io.Source
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class StockBuilder(ticker: String, name: String = "", industry: String = "") {
   val pageDocumentCache = new ConcurrentHashMap[String, Document]

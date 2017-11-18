@@ -1,15 +1,6 @@
 package com.garallex.stocks
 
-import java.util
-
-import org.apache.http.NameValuePair
-import org.apache.http.client.entity.UrlEncodedFormEntity
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.message.BasicNameValuePair
-import org.apache.http.util.EntityUtils
-
-import scala.collection.SortedMap
+import com.garallex.stocks.domain.Stock
 
 
 object Main {
@@ -30,47 +21,8 @@ object Main {
     }
 
   def main(args: Array[String]): Unit = {
-//    val xy = List((100, 50), (110, 60), (120, 70))
-//
-//    val xyy = xy.scanLeft((0, 100)) { case ((prev1, prev2), (bucket, avail)) =>
-//      val toCurrentBucket = Math.min(avail, prev2)
-//      val passFurther = prev2 - toCurrentBucket
-//      (bucket + toCurrentBucket, avail - toCurrentBucket)
-//    }
-//    println(xyy)
-//
-//    val lx = SortedMap(1 -> "a", 2 -> "b", 3 -> "c", 4 -> "d", 5 -> "e", 6 -> "f", 7 -> "g")
-//    val ly = SortedMap(2 -> "u", 3 -> "v", 6 -> "w", 7 -> "x")
-//
-//    val itx = lx.iteratorFrom(2)
-//    val ity = ly.iteratorFrom(2)
-//
-//    val itc = itx zip ity
-//
-//    val res = for {(x, y) <- itc
-//    //      println(s"$x - $y")
-//
-//    } yield (x, y)
-//
-//    println(res.isEmpty)
-//    for (xx <- res) println(xx)
-//
-//    return
-    //    val httpClient = HttpClients.createDefault
-    //    val postRequest = new HttpPost("https://www.morningstar.com/members/login.html")
-    //    val nvps = new util.ArrayList[NameValuePair]
-    //    nvps.add(new BasicNameValuePair("uim-uEmail-input", "alexander.iskhakov@gmail.com"))
-    //    nvps.add(new BasicNameValuePair("uim-uPassword-input", ""))
-    //    nvps.add(new BasicNameValuePair("remember_me", "true"))
-    //    postRequest.setEntity(new UrlEncodedFormEntity(nvps))
-    //    val response = httpClient.execute(postRequest)
-    //    try {
-    //      System.out.println(response.getStatusLine)
-    ////      val entity2 = response.getEntity
-    //      // do something useful with the response body
-    //      // and ensure it is fully consumed
-    ////      EntityUtils.consume(entity2)
-    //    } finally response.close()
+//    val x = PriceLoader.load("MSFT")
+//    println(x)
 
     while (true) {
       val ticker = scala.io.StdIn.readLine("Ticker:")

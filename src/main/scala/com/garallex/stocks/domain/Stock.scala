@@ -1,6 +1,4 @@
-package com.garallex.stocks
-
-import com.garallex.stocks.EconomicMoat.EconomicMoat
+package com.garallex.stocks.domain
 
 import scala.util.{Success, Try}
 
@@ -114,7 +112,7 @@ case class Stock(ticker: String,
     p.sum / sharesOutstanding
   }
 
-  def missingFields =
+  def missingFields: String =
     ((if (cashFlowFromOperations.isEmpty) List("cashFlow") else Nil) ++
       (if (freeCashFlow.isEmpty) List("freeCashFlow") else Nil) ++
       (if (longTermGrowth.isEmpty) List("longTermGrowth") else Nil) ++

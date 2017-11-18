@@ -1,10 +1,10 @@
 package com.garallex.stocks.criteria
 
-import com.garallex.stocks.Stock
+import com.garallex.stocks.domain.Stock
 
-case class LongTermGrowthProspects(stock: Stock) extends Criteria(stock) {
+case class LongTermGrowthProspects(stock: Stock) extends Criteria {
   override def result: Option[Boolean] = stock.longTermGrowth match {
-    case Some(ltg) => Some(ltg > 0.1)
+    case Some(longTermGrowthRate) => Some(longTermGrowthRate > 0.1)
     case _ => None
   }
 }

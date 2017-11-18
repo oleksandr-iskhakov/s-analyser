@@ -1,8 +1,6 @@
 package com.garallex.stocks.criteria
 
-import com.garallex.stocks.Stock
-
-abstract class Criteria(stock: Stock) {
+trait Criteria {
   def result: Option[Boolean]
 
   override def toString: String = result match {

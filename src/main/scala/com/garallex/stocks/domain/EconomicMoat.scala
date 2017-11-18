@@ -1,4 +1,4 @@
-package com.garallex.stocks
+package com.garallex.stocks.domain
 
 object EconomicMoat extends Enumeration {
   type EconomicMoat = Value
