@@ -1,5 +1,7 @@
 package com.garallex.stocks
 
+import com.garallex.stocks.FSM.BreakoutFSM
+import com.garallex.stocks.FSM.BreakoutFSM._
 import com.garallex.stocks.domain.Stock
 
 
@@ -21,8 +23,34 @@ object Main {
     }
 
   def main(args: Array[String]): Unit = {
-//    val x = PriceLoader.load("MSFT")
-//    println(x)
+
+    val resultFsm = BreakoutFSM()
+      .logAndReceive(BodyCut) // a
+      .logAndReceive(ShadowCut) // b
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(ShadowCut) //b
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      //      .logAndReceive(CandleBodyCut) // a
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(ShadowCut) //b
+      .logAndReceive(BodyTopWithinDelta) //c
+      .logAndReceive(BodyTopWithinDelta) //c
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(ShadowCut) //b
+
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(BodyTopLowerThanDelta) // d
+      .logAndReceive(BodyTopLowerThanDelta) // d
+
+    println(resultFsm)
+
+
+    //    val x = PriceLoader.load("MSFT")
+    //    println(x)
 
     while (true) {
       val ticker = scala.io.StdIn.readLine("Ticker:")
