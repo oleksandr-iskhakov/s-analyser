@@ -1,8 +1,8 @@
-package com.garallex.stocks.technical.screeners
+package com.garallex.stocks.technical.breakout
 
 import com.garallex.stocks.TypeAliases.PriceSeries
 import com.garallex.stocks.domain.{Candle, PriceRange}
-import com.garallex.stocks.technical.screeners.BreakoutFSM._
+import com.garallex.stocks.technical.breakout.BreakoutFSM._
 
 import scala.annotation.tailrec
 

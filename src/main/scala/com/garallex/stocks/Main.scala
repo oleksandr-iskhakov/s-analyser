@@ -1,7 +1,7 @@
 package com.garallex.stocks
 
 import com.garallex.stocks.domain.Stock
-import com.garallex.stocks.technical.screeners.Breakout
+import com.garallex.stocks.technical.breakout.Breakout
 
 
 object Main {
