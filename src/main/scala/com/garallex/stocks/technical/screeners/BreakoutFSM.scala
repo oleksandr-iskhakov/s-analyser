@@ -48,6 +48,7 @@ case class BreakoutFSM(state: State, k: Int = 0) {
     case (PreTouchPoint(_), Below) => this
 
     case (PreTouchPoint(nextNumber), BodyCut) => BreakoutFSM(TouchPoint(nextNumber))
+
     case (PreTouchPoint(nextNumber), ShadowCut) => BreakoutFSM(TouchPoint(nextNumber))
 
     case (TouchPoint(_), BodyCut) => this
@@ -58,6 +59,7 @@ case class BreakoutFSM(state: State, k: Int = 0) {
     case (TouchPoint(number), Below) if number < TouchPointsToMatch && k == NonContactPointsAllowedInsideSameContactPoint =>
       BreakoutFSM(PreTouchPoint(number + 1))
 
+    // we need NonContactPointsAllowedInsideSameContactPoint point below to prove that after last Matched touch point price don't go up
     case (TouchPoint(number), Below) if number == TouchPointsToMatch && k == NonContactPointsAllowedInsideSameContactPoint =>
       BreakoutFSM(Match)
 

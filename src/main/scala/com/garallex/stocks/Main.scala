@@ -61,7 +61,9 @@ object Main {
 //
 //    println(resultFsm)
 
-    val price = PriceLoader.load("MSFT")
-    println("result: " + new Breakout(price).screen())
+    val price = PriceLoader.load("WYN")
+    val atr = BigDecimal(1.62)
+    val result = new Breakout(price = price, deltaDown = atr / 2, deltaUp = atr / 2).screen()
+    println(s"result: $result")
   }
 }

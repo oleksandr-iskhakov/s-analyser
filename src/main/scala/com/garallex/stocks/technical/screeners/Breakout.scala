@@ -1,14 +1,12 @@
 package com.garallex.stocks.technical.screeners
 
-import java.time.LocalDate
-
 import com.garallex.stocks.TypeAliases.PriceSeries
 import com.garallex.stocks.domain.{Candle, PriceRange}
 import com.garallex.stocks.technical.screeners.BreakoutFSM._
 
 import scala.annotation.tailrec
 
-class Breakout(price: PriceSeries) {
+class Breakout(price: PriceSeries, deltaDown: BigDecimal, deltaUp: BigDecimal) {
   private def isAbove(candle: Candle, priceRange: PriceRange): Boolean =
     candle.bottomOfCandleBody >= priceRange.level
 
@@ -41,7 +39,7 @@ class Breakout(price: PriceSeries) {
   def screen(): Boolean = {
     val priceToScreen = price.reverse
     val lastClose = priceToScreen.head._2.bottomOfCandleBody
-    val targetRange = PriceRange(lastClose, lastClose - BigDecimal(0.1), lastClose + BigDecimal(0.1))
+    val targetRange = PriceRange(lastClose, lastClose - deltaDown, lastClose + deltaUp)
 
     screenRec(BreakoutFSM(), priceToScreen.tail, targetRange)
   }

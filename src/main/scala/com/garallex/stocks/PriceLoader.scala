@@ -15,7 +15,7 @@ object PriceLoader {
 
   def load(ticker: String): PriceSeries = {
     //    val url: URL = new URL(s"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=$ticker&apikey=63Z6TXYSMOCUZ0N7&outputsize=compact")
-    val url: URL = new URL(s"file:///Users/olek/Work/StockMarket/s-analyser/testFiles/price_msft_test.json")
+    val url: URL = new URL(s"file:///Users/olek/Work/StockMarket/s-analyser/testFiles/price_${ticker}_test.json")
     val rawJsonString = Source.fromInputStream(url.openConnection().getInputStream).mkString
 
     val jSon = parse(rawJsonString, useBigDecimalForDouble = true, useBigIntForLong = true)
