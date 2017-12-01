@@ -1,6 +1,6 @@
 package com.garallex.stocks
 
-import com.garallex.stocks.criteria._
+import com.garallex.stocks.fundamental._
 import com.garallex.stocks.domain.Stock
 
 class StockToString(stock: Stock) {

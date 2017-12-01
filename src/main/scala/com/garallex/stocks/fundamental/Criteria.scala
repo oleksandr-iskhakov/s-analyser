@@ -1,4 +1,4 @@
-package com.garallex.stocks.criteria
+package com.garallex.stocks.fundamental
 
 trait Criteria {
   def result: Option[Boolean]
