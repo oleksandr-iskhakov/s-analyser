@@ -3,10 +3,11 @@ package com.garallex.stocks.technical.breakout
 import com.garallex.stocks.TypeAliases.PriceSeries
 import com.garallex.stocks.domain.{Candle, PriceRange}
 import com.garallex.stocks.technical.breakout.BreakoutFSM._
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.annotation.tailrec
 
-class Breakout(price: PriceSeries, deltaDown: BigDecimal, deltaUp: BigDecimal) {
+class Breakout(price: PriceSeries, deltaDown: BigDecimal, deltaUp: BigDecimal) extends LazyLogging {
   private def isAbove(candle: Candle, priceRange: PriceRange): Boolean =
     candle.bottomOfCandleBody >= priceRange.level
 

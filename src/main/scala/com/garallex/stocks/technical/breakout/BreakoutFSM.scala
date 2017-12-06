@@ -1,6 +1,7 @@
 package com.garallex.stocks.technical.breakout
 
 import com.garallex.stocks.technical.breakout.BreakoutFSM._
+import com.typesafe.scalalogging.LazyLogging
 
 object BreakoutFSM {
 
@@ -29,13 +30,13 @@ object BreakoutFSM {
   def apply(state: State = InitialState, k: Int = 0): BreakoutFSM = new BreakoutFSM(state, k)
 }
 
-case class BreakoutFSM(state: State, k: Int = 0) {
+case class BreakoutFSM(state: State, k: Int = 0) extends LazyLogging {
   private final val TouchPointsToMatch = 3
   private final val NonContactPointsAllowedInsideSameContactPoint = 2
 
   def logAndReceive(message: Message): BreakoutFSM = {
     val newFsm = receive(message)
-    println(s"$message: $this -> $newFsm")
+    logger.debug(s"$message: $this -> $newFsm")
     newFsm
   }
 

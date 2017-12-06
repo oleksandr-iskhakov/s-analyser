@@ -77,8 +77,8 @@ object Main {
 
 
     val lastExpectedDate = LocalDate.of(2017, 12, 5)
-//    val tickers = List("WYN", "MSFT", "GOOG", "CACC", "ASNA")
-    val tickers = List("FRGI")
+    val tickers = List("WYN", "MSFT", "GOOG", "CACC", "ASNA")
+//    val tickers = List("FRGI")
 
     val priceSource = new PriceSource()
     val scannerResult = new SetupScanner(priceSource).scan(tickers, lastExpectedDate)
