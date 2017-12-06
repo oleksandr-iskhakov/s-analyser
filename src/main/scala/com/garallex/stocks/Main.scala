@@ -1,7 +1,22 @@
 package com.garallex.stocks
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+import com.garallex.stocks.datasource.PriceSource
+import com.garallex.stocks.datasource.database.MongoStorage
+import com.garallex.stocks.datasource.apisource.ApiPriceLoader
 import com.garallex.stocks.domain.Stock
+import com.garallex.stocks.technical.SetupScanner
 import com.garallex.stocks.technical.breakout.Breakout
+import org.json4s.JsonAST.JString
+import org.json4s.{CustomSerializer, DefaultFormats}
+import org.json4s.jackson.Serialization.write
+import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.{Completed, MongoClient, MongoClientSettings, MongoCollection, Observer}
+import org.mongodb.scala.connection.ClusterSettings
+
+import scala.util.Try
 
 
 object Main {
@@ -36,34 +51,45 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
+    //    val resultFsm = BreakoutFSM()
+    //      .logAndReceive(BodyCut) // a
+    //      .logAndReceive(ShadowCut) // b
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(ShadowCut) //b
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      //      .logAndReceive(CandleBodyCut) // a
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(ShadowCut) //b
+    //      .logAndReceive(BodyTopWithinDelta) //c
+    //      .logAndReceive(BodyTopWithinDelta) //c
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(ShadowCut) //b
+    //
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //      .logAndReceive(BodyTopLowerThanDelta) // d
+    //
+    //    println(resultFsm)
 
-//    val resultFsm = BreakoutFSM()
-//      .logAndReceive(BodyCut) // a
-//      .logAndReceive(ShadowCut) // b
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(ShadowCut) //b
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      //      .logAndReceive(CandleBodyCut) // a
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(ShadowCut) //b
-//      .logAndReceive(BodyTopWithinDelta) //c
-//      .logAndReceive(BodyTopWithinDelta) //c
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(ShadowCut) //b
-//
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//      .logAndReceive(BodyTopLowerThanDelta) // d
-//
-//    println(resultFsm)
 
-    val price = PriceLoader.load("WYN")
-    val atr = BigDecimal(1.62)
-    val result = new Breakout(price = price, deltaDown = atr / 2, deltaUp = atr / 2).screen()
-    println(s"result: $result")
+    val lastExpectedDate = LocalDate.of(2017, 12, 5)
+//    val tickers = List("WYN", "MSFT", "GOOG", "CACC", "ASNA")
+    val tickers = List("FRGI")
+
+    val priceSource = new PriceSource()
+    val scannerResult = new SetupScanner(priceSource).scan(tickers, lastExpectedDate)
+
+    println("Scanner result:")
+    scannerResult.foreach(println)
+
+    priceSource.close()
+
+    //    val atr = BigDecimal(1.62)
+    //    val result = new Breakout(price = price, deltaDown = atr / 2, deltaUp = atr / 2).screen()
+    //    println(s"result: $result")
   }
 }

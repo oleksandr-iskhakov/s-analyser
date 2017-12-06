@@ -25,22 +25,24 @@ class Breakout(price: PriceSeries, deltaDown: BigDecimal, deltaUp: BigDecimal) {
       false
     else if (fsm.state == Match)
       true
-    else if (isAbove(price.head._2, targetRange))
+    else if (isAbove(price.head, targetRange))
       screenRec(fsm.logAndReceive(Above), price.tail, targetRange)
-    else if (isBelow(price.head._2, targetRange))
+    else if (isBelow(price.head, targetRange))
       screenRec(fsm.logAndReceive(Below), price.tail, targetRange)
-    else if (isBodyCut(price.head._2, targetRange))
+    else if (isBodyCut(price.head, targetRange))
       screenRec(fsm.logAndReceive(BodyCut), price.tail, targetRange)
-    else if (isShadowCut(price.head._2, targetRange))
+    else if (isShadowCut(price.head, targetRange))
       screenRec(fsm.logAndReceive(ShadowCut), price.tail, targetRange)
     else
       throw new Exception()
 
-  def screen(): Boolean = {
-    val priceToScreen = price.reverse
-    val lastClose = priceToScreen.head._2.bottomOfCandleBody
-    val targetRange = PriceRange(lastClose, lastClose - deltaDown, lastClose + deltaUp)
+  def screen(): Boolean =
+    if (price.length < 2) false
+    else {
+      require(price.head.date.isAfter(price.tail.head.date))
+      val lastClose = price.head.bottomOfCandleBody
+      val targetRange = PriceRange(lastClose, lastClose - deltaDown, lastClose + deltaUp)
 
-    screenRec(BreakoutFSM(), priceToScreen.tail, targetRange)
-  }
+      screenRec(BreakoutFSM(), price.tail, targetRange)
+    }
 }
