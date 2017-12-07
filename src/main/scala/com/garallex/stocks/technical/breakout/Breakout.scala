@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.annotation.tailrec
 
-class Breakout(price: PriceSeries, deltaDown: BigDecimal, deltaUp: BigDecimal) extends LazyLogging {
+class Breakout(price: PriceSeries) extends LazyLogging {
   private def isAbove(candle: Candle, priceRange: PriceRange): Boolean =
     candle.bottomOfCandleBody >= priceRange.level
 
@@ -42,7 +42,7 @@ class Breakout(price: PriceSeries, deltaDown: BigDecimal, deltaUp: BigDecimal) e
     else {
       require(price.head.date.isAfter(price.tail.head.date))
       val lastClose = price.head.bottomOfCandleBody
-      val targetRange = PriceRange(lastClose, lastClose - deltaDown, lastClose + deltaUp)
+      val targetRange = PriceRange(lastClose, lastClose * 0.9927, lastClose * 1.0073)
 
       screenRec(BreakoutFSM(), price.tail, targetRange)
     }

@@ -16,7 +16,10 @@ import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.{Completed, MongoClient, MongoClientSettings, MongoCollection, Observer}
 import org.mongodb.scala.connection.ClusterSettings
 
+import scala.concurrent.{Await, Future}
 import scala.util.Try
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 object Main {
@@ -76,17 +79,18 @@ object Main {
     //    println(resultFsm)
 
 
-    val lastExpectedDate = LocalDate.of(2017, 12, 5)
-    val tickers = List("WYN", "MSFT", "GOOG", "CACC", "ASNA")
-//    val tickers = List("FRGI")
+    val lastExpectedDate = LocalDate.of(2017, 12, 6)
 
-    val priceSource = new PriceSource()
-    val scannerResult = new SetupScanner(priceSource).scan(tickers, lastExpectedDate)
+    val tickers = Iterator.continually(io.StdIn.readLine).takeWhile(_ != null).toList
 
+//    val tickers = List("WYN", "MSFT", "GOOG", "CACC", "ASNA")
+    //    val tickers = List("FRGI")
+
+
+    val scannerResultFutures = new SetupScanner().scan(tickers, lastExpectedDate)
+    val scannerResult = Await.result(Future.sequence(scannerResultFutures), 10 minutes)
     println("Scanner result:")
     scannerResult.foreach(println)
-
-    priceSource.close()
 
     //    val atr = BigDecimal(1.62)
     //    val result = new Breakout(price = price, deltaDown = atr / 2, deltaUp = atr / 2).screen()
