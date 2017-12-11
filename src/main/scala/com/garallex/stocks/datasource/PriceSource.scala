@@ -9,7 +9,7 @@ import com.garallex.stocks.datasource.database.MongoStorage
 import com.typesafe.scalalogging.LazyLogging
 
 class PriceSource extends Closeable with LazyLogging {
-  private val mongoStorage = new MongoStorage()
+  private val mongoStorage = new MongoStorage
 
   def load(ticker: String, lastExpectedDate: LocalDate): PriceSeries =
     mongoStorage.fetchLastCandle(ticker) match {
