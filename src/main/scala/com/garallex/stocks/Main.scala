@@ -85,19 +85,9 @@ object Main {
 
     val tickers = Source.fromFile("input.txt").getLines.filter(_.trim.length > 0).toList
 
-//    val tickers = Iterator.continually(io.StdIn.readLine).takeWhile(_ != null).toList
-
-//    val tickers = List("WYN", "MSFT", "GOOG", "CACC", "ASNA")
-    //    val tickers = List("FRGI")
-
-
     val scannerResult = new SetupScanner().scan(tickers, lastExpectedDate)
     val matching = scannerResult.filter(_.result == Left(true))
     println(s"Scanner result: total = ${scannerResult.size}, matching = ${matching.size}:")
     scannerResult.foreach(println)
-
-    //    val atr = BigDecimal(1.62)
-    //    val result = new Breakout(price = price, deltaDown = atr / 2, deltaUp = atr / 2).screen()
-    //    println(s"result: $result")
   }
 }
