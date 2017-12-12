@@ -81,13 +81,13 @@ object Main {
 
 
 
-    val lastExpectedDate = LocalDate.of(2017, 12, 8)
+    val lastExpectedDate = LocalDate.of(2017, 12, 11)
 
     val tickers = Source.fromFile("input.txt").getLines.filter(_.trim.length > 0).toList
 
     val scannerResult = new SetupScanner().scan(tickers, lastExpectedDate)
     val matching = scannerResult.filter(_.result == Left(true))
     println(s"Scanner result: total = ${scannerResult.size}, matching = ${matching.size}:")
-    scannerResult.foreach(println)
+    matching.foreach(println)
   }
 }
