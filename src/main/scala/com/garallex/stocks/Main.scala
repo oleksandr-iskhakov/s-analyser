@@ -7,7 +7,7 @@ import com.garallex.stocks.datasource.PriceSource
 import com.garallex.stocks.datasource.database.MongoStorage
 import com.garallex.stocks.datasource.apisource.ApiPriceLoader
 import com.garallex.stocks.domain.Stock
-import com.garallex.stocks.technical.SetupScanner
+import com.garallex.stocks.technical.{SetupScanner, SetupScannerResult}
 import com.garallex.stocks.technical.breakout.Breakout
 import org.json4s.JsonAST.JString
 import org.json4s.{CustomSerializer, DefaultFormats}
@@ -17,7 +17,7 @@ import org.mongodb.scala.{Completed, MongoClient, MongoClientSettings, MongoColl
 import org.mongodb.scala.connection.ClusterSettings
 
 import scala.concurrent.{Await, Future}
-import scala.util.Try
+import scala.util.{Failure, Try}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
@@ -79,15 +79,36 @@ object Main {
     //
     //    println(resultFsm)
 
+//    Try {
+//      val x = 1 / 0
+//    } match {
+//      case Failure(e) => println(e.getMessage + "\n\t" + e.getStackTrace.mkString("\n\t"))
+//    }
 
+    val dbStorage = new MongoStorage
+    val priceSource = new PriceSource(dbStorage)
 
-    val lastExpectedDate = LocalDate.of(2017, 12, 11)
+    val lastExpectedDate = LocalDate.of(2017, 12, 15)
 
     val tickers = Source.fromFile("input.txt").getLines.filter(_.trim.length > 0).toList
 
-    val scannerResult = new SetupScanner().scan(tickers, lastExpectedDate)
+    val scannerResult = new SetupScanner(
+      portionSize = 20,
+      priceSource = priceSource,
+      lastExpectedDate = lastExpectedDate).scan(tickers)
+
     val matching = scannerResult.filter(_.result == Left(true))
-    println(s"Scanner result: total = ${scannerResult.size}, matching = ${matching.size}:")
+    println(s"Scanner result: total = ${scannerResult.size}")
+    println(s"Matching = ${matching.size}")
     matching.foreach(println)
+
+    val errors = scannerResult.collect {
+      case SetupScannerResult(ticker, _, Right(message)) => ticker -> message
+    }
+
+    println(s"Errors = ${errors.size}")
+    errors.foreach(println)
+
+    dbStorage.close()
   }
 }

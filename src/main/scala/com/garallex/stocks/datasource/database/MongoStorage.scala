@@ -1,23 +1,22 @@
 package com.garallex.stocks.datasource.database
 
-import java.io.Closeable
 import java.time.LocalDate
 
 import com.garallex.stocks.TypeAliases.PriceSeries
 import com.garallex.stocks.domain.Candle
+import com.garallex.stocks.technical.DbStorage
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistries.fromRegistries
 import org.mongodb.scala.bson.BsonString
 import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.{IndexOptions, Indexes}
-import org.mongodb.scala.{Completed, MongoClient, MongoCollection, Observer}
+import org.mongodb.scala.{Completed, MongoClient, MongoCollection}
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-
-class MongoStorage extends Closeable {
+class MongoStorage extends DbStorage {
   private val codecRegistry = fromRegistries(CodecRegistries.fromCodecs(new CandleCodec), DEFAULT_CODEC_REGISTRY)
 
   private val mongoClient = MongoClient()
@@ -42,68 +41,50 @@ class MongoStorage extends Closeable {
       volume = BigDecimal(doc.get("volume").get.asDecimal128().getValue.toString))
 
 
-  private def createIndexIfNotExist(mongoCollection: MongoCollection[Document]): Unit = {
-    val indexes = Await.result(mongoCollection
+  private def createIndexIfNotExist(mongoCollection: MongoCollection[Document]): Future[String] =
+    mongoCollection
       .listIndexes()
-      .toFuture(), 10 seconds)
-
-    if (!indexes.exists(_.keys.exists(_ == "IDX_DATE")))
-      Await.result(mongoCollection.createIndex(
-        Indexes.descending("date"),
-        IndexOptions().name("IDX_DATE").background(true).unique(true))
-        .toFuture(), 10 seconds)
-  }
+      .toFuture()
+      .flatMap { indexes =>
+        if (!indexes.exists(_.keys.exists(_ == "IDX_DATE")))
+          mongoCollection.createIndex(
+            Indexes.descending("date"),
+            IndexOptions().name("IDX_DATE").background(true).unique(true))
+            .toFuture()
+        else Future {
+          ""
+        }
+      }
 
   private def getCollection(ticker: String) = mongoDb.getCollection(ticker)
 
-  def insertCandles(ticker: String, price: PriceSeries): Unit = {
-    createIndexIfNotExist(mongoDb.getCollection(ticker))
-    val mongoCollection = getCollection(ticker)
+  def insertCandles(ticker: String, price: PriceSeries): Future[Completed] =
+    createIndexIfNotExist(getCollection(ticker))
+      .flatMap { _ =>
+        getCollection(ticker)
+          .insertMany(price.map(writer))
+          .toFuture()
+      }
 
-    Await.result(mongoCollection
-      .insertMany(price.map(writer))
-      .toFuture(), 10 seconds)
-  }
-
-  def insertCandle(ticker: String, candle: Candle): Unit = {
-    val mongoCollection = getCollection(ticker)
-
-    val o = mongoCollection.insertOne(writer(candle))
-
-    o.subscribe(new Observer[Completed] {
-      override def onNext(result: Completed): Unit = println("MongoLogger.onNext() called")
-
-      override def onError(e: Throwable): Unit = println(s"MongoLogger.onError() called", e)
-
-      override def onComplete(): Unit = println("MongoLogger.onComplete() called")
-    })
-  }
-
-
-  def fetchLastCandle(ticker: String): Option[Candle] = {
-    val f = mongoDb
+  def fetchLastCandle(ticker: String): Future[Option[Candle]] =
+    mongoDb
       .getCollection(ticker)
       .find()
       .sort(Document("{ date: -1 }"))
       .limit(1)
       .toFuture()
+      .map {
+        case Nil => None
+        case head :: Nil => Some(reader(head))
+      }
 
-    Await.result(f, 5 seconds) match {
-      case Nil => None
-      case head :: Nil => Some(reader(head))
-    }
-  }
-
-  def fetchAll(ticker: String): PriceSeries = {
-    val f = mongoDb
+  def fetchAllCandles(ticker: String): Future[PriceSeries] =
+    mongoDb
       .getCollection(ticker)
       .find()
       .sort(Document("{ date: -1 }"))
       .toFuture()
-    Await.result(f, 5 seconds)
-      .map(reader)
-      .toList
-  }
+      .map(_.map(reader).toList)
 
   override def close(): Unit = mongoClient.close()
 }
