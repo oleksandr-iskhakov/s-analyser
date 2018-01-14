@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
-
 object Main {
   def grahamPreFiltered(stock: Stock): Option[Boolean] =
     (stock.enterpriseValue,
@@ -55,6 +54,8 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
+    fundamentalAnalyzer()
+    return
     //    val resultFsm = BreakoutFSM()
     //      .logAndReceive(BodyCut) // a
     //      .logAndReceive(ShadowCut) // b
@@ -88,7 +89,7 @@ object Main {
     val dbStorage = new MongoStorage
     val priceSource = new PriceSource(dbStorage)
 
-    val lastExpectedDate = LocalDate.of(2017, 12, 15)
+    val lastExpectedDate = LocalDate.of(2017, 12, 21)
 
     val tickers = Source.fromFile("input.txt").getLines.filter(_.trim.length > 0).toList
 

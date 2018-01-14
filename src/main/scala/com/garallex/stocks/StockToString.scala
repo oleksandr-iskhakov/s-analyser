@@ -24,6 +24,8 @@ class StockToString(stock: Stock) {
       .append(s"Cash flow Form Operations             ${decimalOptionToString(stock.cashFlowFromOperations)}\n")
       .append(s"Free Cash Flow                        ${decimalOptionToString(stock.freeCashFlow)}\n")
       .append(s"Long Term Debt                        ${decimalOptionToString(stock.longTermDebt)}\n")
+      .append(s"Short Term Debt                       ${decimalOptionToString(stock.shortTermDebt)}\n")
+      .append(s"Cash And Short Term Investments       ${decimalOptionToString(stock.cashAndShortTermInvestments)}\n")
       .append(s"Total Debt                            ${decimalOptionToString(stock.totalDebt)}\n")
       .append(s"Net Income After Tax                  ${decimalOptionToString(stock.netIncomeAfterTax)}\n")
       .append(s"Long Term Debt / Net Income After Tax ${decimalOptionToString(stock.longTermDebtToNetIncomeAfterTax, 1, "%.1f")} (should be < 3. Khoo). ${LongTermDebtToNetIncomeAfterTax(stock)} \n")
@@ -39,8 +41,7 @@ class StockToString(stock: Stock) {
       .append(s"Price to book                         ${decimalOptionToString(stock.priceToBook, 1, "%.1f")} (should be <= 1.5. Graham). ${PriceToBook(stock)}\n")
       .append(s"\n")
       .append(s"Actual price                          ${decimalOptionToString(stock.actualPrice)}\n")
-      .append(s"Intrinsic A.Khoo Original             ${decimalOptionToString(stock.intrinsicValueAdamKhooOriginal, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueAdamKhooOriginal(stock)}\n")
-      .append(s"Intrinsic A.Khoo on Free Cash Flow    ${decimalOptionToString(stock.intrinsicValueAdamKhooOnFreeCashFlow, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueAdamKhooOnFreeCashFlow(stock)}\n")
+      .append(s"Intrinsic Wealth Academy              ${decimalOptionToString(stock.intrinsicValueWa, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueAdamKhoo(stock)}\n")
       .append(s"Intrinsic value Graham                ${decimalOptionToString(stock.intrinsicValueGraham, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueGraham(stock)}\n")
       .append(s"Intrinsic value Graham (Updated)      ${decimalOptionToString(stock.intrinsicValueGrahamUpdated, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueGrahamUpdated(stock)}\n")
       .append(s"Graham Mixed Multiplier (P/E * P/B)   ${decimalOptionToString(stock.grahamMixedMultiplier, 1, "%.2f")} (should be <= 22.5. Graham)\n")
@@ -48,5 +49,4 @@ class StockToString(stock: Stock) {
       .append(s"\n")
       .append(s"Held by Institutions, %               ${decimalOptionToString(stock.heldByInstitutionsRatio, 100, "%.1f")} (Should be < 60 %. Graham. Value more then 60% is considered as institutionally overbought)\n")
       .toString
-
 }

@@ -23,29 +23,11 @@ case class Stock(ticker: String,
                  totalCurrentAssets: Option[BigDecimal],
                  totalCurrentLiabilities: Option[BigDecimal],
                  longTermDebt: Option[BigDecimal],
+                 shortTermDebt: Option[BigDecimal],
+                 cashAndShortTermInvestments: Option[BigDecimal],
                  totalDebt: Option[BigDecimal],
                  cashPerShare: Option[BigDecimal],
-                 heldByInstitutionsRatio: Option[BigDecimal]) {
-
-  //  lazy val intrinsicValueAdamKhooOriginal: Option[BigDecimal] =
-  //    (cashFlowFromOperations, longTermGrowth, beta, sharesOutstanding, totalDebt, cashPerShare) match {
-  //      case (Some(cf), Some(ltg), Some(b), Some(so), Some(td), Some(cps)) =>
-  //        Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so) - td / so + cps)
-  //      case _ => None
-  //    }
-
-  lazy val intrinsicValueAdamKhooOnFreeCashFlow: Option[BigDecimal] =
-    (freeCashFlow, longTermGrowth, beta, sharesOutstanding, totalDebt, cashPerShare) match {
-      case (Some(fcf), Some(ltg), Some(b), Some(so), Some(td), Some(cps)) =>
-        Some(calcIntrinsicValueAdamKhoo(fcf, ltg, b, so) - td / so + cps)
-      case _ => None
-    }
-
-  lazy val intrinsicValueAdamKhooOriginal: Option[BigDecimal] =
-    (cashFlowFromOperations, longTermGrowth, beta, sharesOutstanding) match {
-      case (Some(cf), Some(ltg), Some(b), Some(so)) => Some(calcIntrinsicValueAdamKhoo(cf, ltg, b, so))
-      case _ => None
-    }
+                 heldByInstitutionsRatio: Option[BigDecimal]) extends IntrinsicValueWa {
 
   lazy val intrinsicValueGraham: Option[BigDecimal] = (eps, longTermGrowth) match {
     case (Some(epsValue), Some(longTermGrowthValue)) => Some(epsValue * (8.5 + 2 * longTermGrowthValue * 100))
@@ -86,30 +68,6 @@ case class Stock(ticker: String,
   lazy val netCurrentAssets: Option[BigDecimal] = (totalCurrentAssets, totalCurrentLiabilities) match {
     case (Some(a), Some(l)) => Some(a - l)
     case _ => None
-  }
-
-  private def calcIntrinsicValueAdamKhoo(cashFlow: BigDecimal,
-                                         longTermGrowthRate: BigDecimal,
-                                         beta: BigDecimal,
-                                         sharesOutstanding: BigDecimal): BigDecimal = {
-
-    def getDiscountRateByBeta(beta: BigDecimal): BigDecimal =
-      (if (beta < 0.8) BigDecimal("5")
-      else if (beta < 1) BigDecimal("5.7") // ???
-      else if (beta < 1.1) BigDecimal("6")
-      else if (beta < 1.2) BigDecimal("6.8")
-      else if (beta < 1.3) BigDecimal("7")
-      else if (beta < 1.4) BigDecimal("7.9")
-      else if (beta < 1.5) BigDecimal("8")
-      else if (beta < 1.6) BigDecimal("8.9")
-      else BigDecimal("9")) / BigDecimal("100")
-
-    val p = new collection.mutable.ArrayBuffer[BigDecimal]
-    p.append(cashFlow * (1 + longTermGrowthRate))
-    for (i <- 1 until 10) p.append(p(i - 1) * (1 + longTermGrowthRate))
-    val discountRate = getDiscountRateByBeta(beta)
-    for (i <- p.indices) p.insert(i, p(i) / math.pow((1 + discountRate).toDouble, i + 1))
-    p.sum / sharesOutstanding
   }
 
   def missingFields: String =

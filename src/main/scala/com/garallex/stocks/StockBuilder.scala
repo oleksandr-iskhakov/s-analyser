@@ -15,8 +15,9 @@ import scala.concurrent.{Await, Future}
 import scala.io.Source
 
 class StockBuilder(ticker: String, name: String = "", industry: String = "") {
-  val pageDocumentCache = new ConcurrentHashMap[String, Document]
-  val pageStringCache = new ConcurrentHashMap[String, String]
+  private val pageDocumentCache = new ConcurrentHashMap[String, Document]
+  private val pageStringCache = new ConcurrentHashMap[String, String]
+  private implicit val formats = DefaultFormats
 
   def fetchWebPage(ticker: String, prefix: String, urlBuilder: (String, String) => URL): Document = {
     fetchWebPageAsDocument(urlBuilder(ticker, prefix))
@@ -40,6 +41,7 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     case 'M' => BigDecimal(value.split('M').head) * 1000000
     case 'B' => BigDecimal(value.split('B').head) * 1000000000
     case n if n.isDigit => BigDecimal(value)
+    case '-' => 0
     case u => throw new Exception(s"Unrecognized multiplier $u")
   }
 
@@ -227,7 +229,6 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
     val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistory" \ "balanceSheetStatements") (0) \ "totalCurrentAssets" \ "raw"
-    implicit val formats = DefaultFormats
     BigDecimal(value.extract[BigInt])
   }
 
@@ -236,7 +237,6 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
     val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistory" \ "balanceSheetStatements") (0) \ "totalCurrentLiabilities" \ "raw"
-    implicit val formats = DefaultFormats
     BigDecimal(value.extract[BigInt])
   }
 
@@ -244,9 +244,59 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
     val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
     val jsonString = fetchWebPageAsString(url)
     val jSon = parse(jsonString)
-    val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistory" \ "balanceSheetStatements") (0) \ "longTermDebt" \ "raw"
-    implicit val formats = DefaultFormats
+    val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistoryQuarterly" \ "balanceSheetStatements") (0) \ "longTermDebt" \ "raw"
     BigDecimal(value.extract[BigInt])
+  }
+
+  def fetchShortTermDebtYahoo(ticker: String): BigDecimal = {
+    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
+    val jsonString = fetchWebPageAsString(url)
+    val jSon = parse(jsonString)
+    val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistoryQuarterly" \ "balanceSheetStatements") (0) \ "shortLongTermDebt" \ "raw"
+    BigDecimal(value.extract[BigInt])
+  }
+
+  def fetchCashYahoo(ticker: String): BigDecimal = {
+    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
+    val jsonString = fetchWebPageAsString(url)
+    val jSon = parse(jsonString)
+    val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistoryQuarterly" \ "balanceSheetStatements") (0) \ "cash" \ "raw"
+    BigDecimal(value.extract[BigInt])
+  }
+
+  def fetchShortTermInvestmentsYahoo(ticker: String): BigDecimal = {
+    val url = new URL(s"https://query2.finance.yahoo.com/v10/finance/quoteSummary/$ticker?modules=incomeStatementHistory%2CcashflowStatementHistory%2CbalanceSheetHistory%2CincomeStatementHistoryQuarterly%2CcashflowStatementHistoryQuarterly%2CbalanceSheetHistoryQuarterly%2Cearnings")
+    val jsonString = fetchWebPageAsString(url)
+    val jSon = parse(jsonString)
+    val value = ((jSon \ "quoteSummary" \ "result") (0) \ "balanceSheetHistoryQuarterly" \ "balanceSheetStatements") (0) \ "shortTermInvestments" \ "raw"
+    BigDecimal(value.extract[BigInt])
+  }
+
+  def fetchCashAndShortTermInvestmentsYahoo(ticker: String): BigDecimal =
+    fetchCashYahoo(ticker) + fetchShortTermInvestmentsYahoo(ticker)
+
+  def fetchCashAndShortTermInvestmentsMarketWatch(ticker: String): BigDecimal = {
+    val doc = fetchWebPageAsDocument(new URL(s"https://www.marketwatch.com/investing/stock/$ticker/financials/balance-sheet/quarter"))
+    val elements = doc.body.getElementsContainingOwnText("Cash & Short Term Investments")
+    val children = elements.get(0).parent().children()
+    val element = children.get(children.size() - 2)
+    abbreviatedStringToBigDecimal(element.ownText)
+  }
+
+  def fetchShortTermDebtMarketWatch(ticker: String): BigDecimal = {
+    val doc = fetchWebPageAsDocument(new URL(s"https://www.marketwatch.com/investing/stock/$ticker/financials/balance-sheet/quarter"))
+    val elements = doc.body.getElementsContainingOwnText("Short Term Debt")
+    val children = elements.get(0).parent().children()
+    val element = children.get(children.size() - 2)
+    abbreviatedStringToBigDecimal(element.ownText)
+  }
+
+  def fetchLongTermDebtMarketWatch(ticker: String): BigDecimal = {
+    val doc = fetchWebPageAsDocument(new URL(s"https://www.marketwatch.com/investing/stock/$ticker/financials/balance-sheet/quarter"))
+    val elements = doc.body.getElementsContainingOwnText("Long-Term Debt")
+    val children = elements.get(0).parent().children()
+    val element = children.get(children.size() - 2)
+    abbreviatedStringToBigDecimal(element.ownText)
   }
 
   def fetchStockTickers(): Iterator[(String, String, String)] = {
@@ -310,7 +360,9 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       enterpriseValue <- fetchValue(ticker, fetchEnterpriseValueYahoo)
       totalCurrentAssets <- fetchValue(ticker, fetchTotalCurrentAssetsYahoo)
       totalCurrentLiabilities <- fetchValue(ticker, fetchTotalCurrentLiabilitiesYahoo)
-      longTermDebt <- fetchValue(ticker, fetchLongTermDebtYahoo)
+      longTermDebt <- fetchValue(ticker, fetchLongTermDebtYahoo, fetchLongTermDebtMarketWatch)
+      shortTermDebt <- fetchValue(ticker, fetchShortTermDebtYahoo, fetchShortTermDebtMarketWatch)
+      cashAndShortTermInvestments <- fetchValue(ticker, fetchShortTermInvestmentsYahoo, fetchCashAndShortTermInvestmentsMarketWatch)
       totalDebt <- fetchValue(ticker, fetchTotalDebtYahoo)
       cashPerShare <- fetchValue(ticker, fetchCashPerShareYahoo)
       netIncomeAfterTax <- fetchValue(ticker, fetchNetIncomeAfterTax)
@@ -336,6 +388,8 @@ class StockBuilder(ticker: String, name: String = "", industry: String = "") {
       totalCurrentAssets = totalCurrentAssets,
       totalCurrentLiabilities = totalCurrentLiabilities,
       longTermDebt = longTermDebt,
+      shortTermDebt = shortTermDebt,
+      cashAndShortTermInvestments = cashAndShortTermInvestments,
       totalDebt = totalDebt,
       cashPerShare = cashPerShare,
       netIncomeAfterTax = netIncomeAfterTax,
