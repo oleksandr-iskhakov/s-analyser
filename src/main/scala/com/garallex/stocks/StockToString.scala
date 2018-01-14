@@ -41,7 +41,7 @@ class StockToString(stock: Stock) {
       .append(s"Price to book                         ${decimalOptionToString(stock.priceToBook, 1, "%.1f")} (should be <= 1.5. Graham). ${PriceToBook(stock)}\n")
       .append(s"\n")
       .append(s"Actual price                          ${decimalOptionToString(stock.actualPrice)}\n")
-      .append(s"Intrinsic Wealth Academy              ${decimalOptionToString(stock.intrinsicValueWa, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueAdamKhoo(stock)}\n")
+      .append(s"Intrinsic value Wealth Academy        ${decimalOptionToString(stock.intrinsicValueWa, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueWa(stock)}\n")
       .append(s"Intrinsic value Graham                ${decimalOptionToString(stock.intrinsicValueGraham, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueGraham(stock)}\n")
       .append(s"Intrinsic value Graham (Updated)      ${decimalOptionToString(stock.intrinsicValueGrahamUpdated, 1, "%.2f")} (should be at least 20% discount. Khoo). ${IntrinsicValueGrahamUpdated(stock)}\n")
       .append(s"Graham Mixed Multiplier (P/E * P/B)   ${decimalOptionToString(stock.grahamMixedMultiplier, 1, "%.2f")} (should be <= 22.5. Graham)\n")
