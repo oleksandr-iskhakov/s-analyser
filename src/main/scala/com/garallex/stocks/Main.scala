@@ -5,10 +5,11 @@ import java.time.format.DateTimeFormatter
 
 import com.garallex.stocks.datasource.PriceSource
 import com.garallex.stocks.datasource.database.MongoStorage
-import com.garallex.stocks.datasource.apisource.ApiPriceLoader
-import com.garallex.stocks.domain.Stock
+import com.garallex.stocks.datasource.apisource._
+import com.garallex.stocks.domain.{AveragePenetrationBuilder, ImpulseBuilder, Stock}
 import com.garallex.stocks.technical.{SetupScanner, SetupScannerResult}
 import com.garallex.stocks.technical.breakout.Breakout
+import com.garallex.stocks.technical.impulse.ImpulseStrategy1
 import org.json4s.JsonAST.JString
 import org.json4s.{CustomSerializer, DefaultFormats}
 import org.json4s.jackson.Serialization.write
@@ -54,8 +55,80 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
-    fundamentalAnalyzer()
-    return
+    val ticker = "MSFT"
+
+    val price = ApiPriceLoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact)
+
+    val dailyFastEma = ApiEMALoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "daily", "time_period" -> "11", "series_type" -> "close"))
+
+    val dailySlowEma = ApiEMALoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "daily", "time_period" -> "22", "series_type" -> "close"))
+
+    val weeklyFastEma = ApiEMALoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "weekly", "time_period" -> "13", "series_type" -> "close"))
+
+    val weeklySlowEma = ApiEMALoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "weekly", "time_period" -> "26", "series_type" -> "close"))
+
+    val dailyMacd = ApiMACDLoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "daily", "series_type" -> "close"))
+
+    val weeklyMacd = ApiMACDLoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "weekly", "series_type" -> "close"))
+
+    val dailyImpulse = ImpulseBuilder(dailyFastEma, dailyMacd)
+    val weeklyImpulse = ImpulseBuilder(weeklyFastEma, weeklyMacd)
+
+    val dailyFastEmaAvePenetration = AveragePenetrationBuilder(price, dailyFastEma, 30)
+    val dailySlowEmaAvePenetration = AveragePenetrationBuilder(price, dailySlowEma, 30)
+
+    val stochastic = ApiStochasticLoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "daily"))
+
+    val rsi = ApiRSILoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "daily", "time_period" -> "14", "series_type" -> "close"))
+
+    val atr = ApiATRLoader.fetch(
+      ticker = ticker,
+      fetchType = FetchType.Compact,
+      parameters = Map("interval" -> "daily", "time_period" -> "66", "series_type" -> "close"))
+
+    val strategy = new ImpulseStrategy1(price,
+      weeklyFastEma,
+      weeklySlowEma,
+      dailyFastEma,
+      dailySlowEma,
+      atr,
+      stochastic,
+      dailyFastEmaAvePenetration,
+      dailySlowEmaAvePenetration,
+      rsi,
+      weeklyMacd,
+      dailyMacd)
+
+    val result = strategy.backtest()
+
+    println(result)
+    //    fundamentalAnalyzer()
     //    val resultFsm = BreakoutFSM()
     //      .logAndReceive(BodyCut) // a
     //      .logAndReceive(ShadowCut) // b
@@ -80,11 +153,11 @@ object Main {
     //
     //    println(resultFsm)
 
-//    Try {
-//      val x = 1 / 0
-//    } match {
-//      case Failure(e) => println(e.getMessage + "\n\t" + e.getStackTrace.mkString("\n\t"))
-//    }
+    //    Try {
+    //      val x = 1 / 0
+    //    } match {
+    //      case Failure(e) => println(e.getMessage + "\n\t" + e.getStackTrace.mkString("\n\t"))
+    //    }
 
     val dbStorage = new MongoStorage
     val priceSource = new PriceSource(dbStorage)

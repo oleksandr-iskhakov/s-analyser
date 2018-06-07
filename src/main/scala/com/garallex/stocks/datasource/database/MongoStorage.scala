@@ -84,7 +84,7 @@ class MongoStorage extends DbStorage {
       .find()
       .sort(Document("{ date: -1 }"))
       .toFuture()
-      .map(_.map(reader).toList)
+      .map(_.map(reader).toVector)
 
   override def close(): Unit = mongoClient.close()
 }

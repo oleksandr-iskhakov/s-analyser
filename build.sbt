@@ -13,7 +13,8 @@ libraryDependencies ++= Seq(
   "org.mongodb.scala" %% "mongo-scala-driver" % "2.1.0",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
-  "org.scala-lang.modules" %% "scala-async" % "0.9.7"
+  "org.scala-lang.modules" %% "scala-async" % "0.9.7",
+  "net.liftweb" %% "lift-json" % "3.2.0"
 )
 
 resolvers ++= Seq(
@@ -24,3 +25,4 @@ resolvers ++= Seq(
 
 scalacOptions += "-feature"
 scalacOptions += "-language:postfixOps"
+scalacOptions += "-deprecation"
