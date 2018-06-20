@@ -16,7 +16,7 @@ object ApiRSILoader extends ApiLoader[RSI] {
     seriesJson
       .map { case (date, values) =>
         RSI(
-          date = LocalDate.parse(date),
+          date = LocalDate.parse(date.take(10)),
           rsi = BigDecimal(values("RSI"))
         )
       }.toVector

@@ -16,7 +16,7 @@ object ApiPriceLoader extends ApiLoader[Candle] {
     seriesJson
       .map { case (date, values) =>
         Candle(
-          date = LocalDate.parse(date),
+          date = LocalDate.parse(date.take(10)),
           open = BigDecimal(values("1. open")),
           high = BigDecimal(values("2. high")),
           low = BigDecimal(values("3. low")),

@@ -16,7 +16,7 @@ object ApiStochasticLoader extends ApiLoader[Stochastic] {
     seriesJson
       .map { case (date, values) =>
         Stochastic(
-          date = LocalDate.parse(date),
+          date = LocalDate.parse(date.take(10)),
           slowK = BigDecimal(values("SlowK")),
           slowD = BigDecimal(values("SlowD"))
         )

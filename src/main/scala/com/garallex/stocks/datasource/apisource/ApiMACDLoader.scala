@@ -16,7 +16,7 @@ object ApiMACDLoader extends ApiLoader[MACD] {
     seriesJson
       .map { case (date, values) =>
         MACD(
-          date = LocalDate.parse(date),
+          date = LocalDate.parse(date.take(10)),
           macd = BigDecimal(values("MACD")),
           macdSignal = BigDecimal(values("MACD_Signal")),
           macdHist = BigDecimal(values("MACD_Hist"))

@@ -91,8 +91,8 @@ object Main {
       fetchType = FetchType.Compact,
       parameters = Map("interval" -> "weekly", "series_type" -> "close"))
 
-    val dailyImpulse = ImpulseBuilder(dailyFastEma, dailyMacd)
-    val weeklyImpulse = ImpulseBuilder(weeklyFastEma, weeklyMacd)
+//    val dailyImpulse = ImpulseBuilder(dailyFastEma, dailyMacd)
+//    val weeklyImpulse = ImpulseBuilder(weeklyFastEma, weeklyMacd)
 
     val dailyFastEmaAvePenetration = AveragePenetrationBuilder(price, dailyFastEma, 30)
     val dailySlowEmaAvePenetration = AveragePenetrationBuilder(price, dailySlowEma, 30)
@@ -128,6 +128,7 @@ object Main {
     val result = strategy.backtest()
 
     println(result)
+    return
     //    fundamentalAnalyzer()
     //    val resultFsm = BreakoutFSM()
     //      .logAndReceive(BodyCut) // a

@@ -16,7 +16,7 @@ object ApiATRLoader extends ApiLoader[ATR] {
     seriesJson
       .map { case (date, values) =>
         ATR(
-          date = LocalDate.parse(date),
+          date = LocalDate.parse(date.take(10)),
           atr = BigDecimal(values("ATR"))
         )
       }
