@@ -6,7 +6,7 @@ import com.garallex.stocks.domain.MACD
 import com.garallex.stocks.domain.Orderings._
 import org.json4s.native.JsonMethods.parse
 
-object ApiMACDLoader extends ApiLoader[MACD] {
+class ApiMACDLoader extends ApiLoader[MACD] {
   override protected val apiFunction: String = "MACD"
 
   override protected def parseFromJson(rawJsonString: String): Vector[MACD] = {

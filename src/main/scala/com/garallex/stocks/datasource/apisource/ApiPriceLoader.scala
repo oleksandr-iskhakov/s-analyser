@@ -6,7 +6,7 @@ import com.garallex.stocks.domain.Candle
 import com.garallex.stocks.domain.Orderings._
 import org.json4s.native.JsonMethods.parse
 
-object ApiPriceLoader extends ApiLoader[Candle] {
+class ApiPriceLoader extends ApiLoader[Candle] {
   override protected val apiFunction: String = "TIME_SERIES_DAILY"
 
   override protected def parseFromJson(rawJsonString: String): Vector[Candle] = {
@@ -25,5 +25,4 @@ object ApiPriceLoader extends ApiLoader[Candle] {
       }.toVector
       .sortBy(_.date)
   }
-
 }

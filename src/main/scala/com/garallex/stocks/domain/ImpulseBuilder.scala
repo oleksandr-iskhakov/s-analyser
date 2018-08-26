@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import com.garallex.stocks.domain.ImpulseDirection.ImpulseDirection
 
-case class Impulse(date: LocalDate, impulse: ImpulseDirection)
+case class Impulse(override val date: LocalDate, impulse: ImpulseDirection) extends DateBased(date)
 
 object ImpulseDirection extends Enumeration {
   type ImpulseDirection = Value

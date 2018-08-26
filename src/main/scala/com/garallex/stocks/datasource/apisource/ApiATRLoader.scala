@@ -6,7 +6,7 @@ import com.garallex.stocks.domain.ATR
 import com.garallex.stocks.domain.Orderings._
 import org.json4s.native.JsonMethods.parse
 
-object ApiATRLoader extends ApiLoader[ATR] {
+class ApiATRLoader extends ApiLoader[ATR] {
   override protected val apiFunction: String = "ATR"
 
   override protected def parseFromJson(rawJsonString: String): Vector[ATR] = {

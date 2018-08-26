@@ -6,7 +6,7 @@ import com.garallex.stocks.domain.Orderings._
 import com.garallex.stocks.domain.Stochastic
 import org.json4s.native.JsonMethods.parse
 
-object ApiStochasticLoader extends ApiLoader[Stochastic] {
+class ApiStochasticLoader extends ApiLoader[Stochastic] {
   override protected val apiFunction: String = "STOCH"
 
   override protected def parseFromJson(rawJsonString: String): Vector[Stochastic] = {

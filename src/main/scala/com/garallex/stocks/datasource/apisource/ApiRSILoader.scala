@@ -6,7 +6,7 @@ import com.garallex.stocks.domain.Orderings._
 import com.garallex.stocks.domain.RSI
 import org.json4s.native.JsonMethods.parse
 
-object ApiRSILoader extends ApiLoader[RSI] {
+class ApiRSILoader extends ApiLoader[RSI] {
   override protected val apiFunction: String = "RSI"
 
   override protected def parseFromJson(rawJsonString: String): Vector[RSI] = {

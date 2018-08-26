@@ -54,76 +54,77 @@ object Main {
     }
   }
 
+  private def refreshDataFiles(ticker: String) = {
+  }
+
   def main(args: Array[String]): Unit = {
-    val ticker = "MSFT"
+    val ticker = "BURL"
+    val apiPriceLoader = new ApiPriceLoader
+    apiPriceLoader.fetch(ticker = ticker, fetchType = FetchType.Compact)
 
-    val price = ApiPriceLoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact)
-
-    val dailyFastEma = ApiEMALoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    val dailyFastEma = new ApiEMALoader
+    dailyFastEma.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "daily", "time_period" -> "11", "series_type" -> "close"))
 
-    val dailySlowEma = ApiEMALoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    val dailySlowEma = new ApiEMALoader
+    dailySlowEma.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "daily", "time_period" -> "22", "series_type" -> "close"))
 
-    val weeklyFastEma = ApiEMALoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    val weeklyFastEma = new ApiEMALoader
+    weeklyFastEma.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "weekly", "time_period" -> "13", "series_type" -> "close"))
 
-    val weeklySlowEma = ApiEMALoader.fetch(
+    Thread.sleep(61 * 1000)
+
+    val weeklySlowEma = new ApiEMALoader
+    weeklySlowEma.fetch(
       ticker = ticker,
       fetchType = FetchType.Compact,
       parameters = Map("interval" -> "weekly", "time_period" -> "26", "series_type" -> "close"))
 
-    val dailyMacd = ApiMACDLoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    val dailyMacd = new ApiMACDLoader
+    dailyMacd.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "daily", "series_type" -> "close"))
 
-    val weeklyMacd = ApiMACDLoader.fetch(
+    val weeklyMacd = new ApiMACDLoader
+    weeklyMacd.fetch(
       ticker = ticker,
       fetchType = FetchType.Compact,
       parameters = Map("interval" -> "weekly", "series_type" -> "close"))
 
-//    val dailyImpulse = ImpulseBuilder(dailyFastEma, dailyMacd)
-//    val weeklyImpulse = ImpulseBuilder(weeklyFastEma, weeklyMacd)
-
-    val dailyFastEmaAvePenetration = AveragePenetrationBuilder(price, dailyFastEma, 30)
-    val dailySlowEmaAvePenetration = AveragePenetrationBuilder(price, dailySlowEma, 30)
-
-    val stochastic = ApiStochasticLoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    val stochastic = new ApiStochasticLoader
+    stochastic.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "daily"))
 
-    val rsi = ApiRSILoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    Thread.sleep(61 * 1000)
+
+    val rsi = new ApiRSILoader
+    rsi.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "daily", "time_period" -> "14", "series_type" -> "close"))
 
-    val atr = ApiATRLoader.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    val atr = new ApiATRLoader
+    atr.fetch(ticker = ticker, fetchType = FetchType.Compact,
       parameters = Map("interval" -> "daily", "time_period" -> "66", "series_type" -> "close"))
 
-    val strategy = new ImpulseStrategy1(price,
-      weeklyFastEma,
-      weeklySlowEma,
-      dailyFastEma,
-      dailySlowEma,
-      atr,
-      stochastic,
+    //    val dailyImpulse = ImpulseBuilder(dailyFastEma, dailyMacd)
+    //    val weeklyImpulse = ImpulseBuilder(weeklyFastEma, weeklyMacd)
+
+    val dailyFastEmaAvePenetration = AveragePenetrationBuilder(apiPriceLoader.getResult, dailyFastEma.getResult, 30)
+    val dailySlowEmaAvePenetration = AveragePenetrationBuilder(apiPriceLoader.getResult, dailySlowEma.getResult, 30)
+
+    val strategy = new ImpulseStrategy1(
+      apiPriceLoader.getResult,
+      weeklyFastEma.getResult,
+      weeklySlowEma.getResult,
+      dailyFastEma.getResult,
+      dailySlowEma.getResult,
+      atr.getResult,
+      stochastic.getResult,
       dailyFastEmaAvePenetration,
       dailySlowEmaAvePenetration,
-      rsi,
-      weeklyMacd,
-      dailyMacd)
+      rsi.getResult,
+      weeklyMacd.getResult,
+      dailyMacd.getResult)
 
     val result = strategy.backtest()
 
