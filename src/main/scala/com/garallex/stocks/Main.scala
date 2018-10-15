@@ -59,37 +59,34 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val ticker = "BURL"
+    val fetchType = FetchType.Full
     val apiPriceLoader = new ApiPriceLoader
-    apiPriceLoader.fetch(ticker = ticker, fetchType = FetchType.Compact)
+    apiPriceLoader.fetch(ticker, fetchType)
 
     val dailyFastEma = new ApiEMALoader
-    dailyFastEma.fetch(ticker = ticker, fetchType = FetchType.Compact,
+    dailyFastEma.fetch(ticker, fetchType,
       parameters = Map("interval" -> "daily", "time_period" -> "11", "series_type" -> "close"))
 
     val dailySlowEma = new ApiEMALoader
-    dailySlowEma.fetch(ticker = ticker, fetchType = FetchType.Compact,
+    dailySlowEma.fetch(ticker, fetchType,
       parameters = Map("interval" -> "daily", "time_period" -> "22", "series_type" -> "close"))
 
     val weeklyFastEma = new ApiEMALoader
-    weeklyFastEma.fetch(ticker = ticker, fetchType = FetchType.Compact,
+    weeklyFastEma.fetch(ticker, fetchType,
       parameters = Map("interval" -> "weekly", "time_period" -> "13", "series_type" -> "close"))
 
     Thread.sleep(61 * 1000)
 
     val weeklySlowEma = new ApiEMALoader
-    weeklySlowEma.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    weeklySlowEma.fetch(ticker, fetchType,
       parameters = Map("interval" -> "weekly", "time_period" -> "26", "series_type" -> "close"))
 
     val dailyMacd = new ApiMACDLoader
-    dailyMacd.fetch(ticker = ticker, fetchType = FetchType.Compact,
+    dailyMacd.fetch(ticker, fetchType,
       parameters = Map("interval" -> "daily", "series_type" -> "close"))
 
     val weeklyMacd = new ApiMACDLoader
-    weeklyMacd.fetch(
-      ticker = ticker,
-      fetchType = FetchType.Compact,
+    weeklyMacd.fetch(ticker, fetchType,
       parameters = Map("interval" -> "weekly", "series_type" -> "close"))
 
     val stochastic = new ApiStochasticLoader
@@ -99,11 +96,11 @@ object Main {
     Thread.sleep(61 * 1000)
 
     val rsi = new ApiRSILoader
-    rsi.fetch(ticker = ticker, fetchType = FetchType.Compact,
+    rsi.fetch(ticker, fetchType,
       parameters = Map("interval" -> "daily", "time_period" -> "14", "series_type" -> "close"))
 
     val atr = new ApiATRLoader
-    atr.fetch(ticker = ticker, fetchType = FetchType.Compact,
+    atr.fetch(ticker, fetchType,
       parameters = Map("interval" -> "daily", "time_period" -> "66", "series_type" -> "close"))
 
     //    val dailyImpulse = ImpulseBuilder(dailyFastEma, dailyMacd)
@@ -126,9 +123,9 @@ object Main {
       weeklyMacd.getResult,
       dailyMacd.getResult)
 
-    val result = strategy.backtest()
-
-    println(result)
+    val result = strategy.backtest(Some(LocalDate.of(2017, 11, 1)))
+    println(result.foreach(println))
+    println("Total: " + result.map(_.profitLoss).sum)
     return
     //    fundamentalAnalyzer()
     //    val resultFsm = BreakoutFSM()
